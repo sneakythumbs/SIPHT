@@ -264,14 +264,11 @@ static IplImage* convert_to_gray32( IplImage* img )
   @param img_dbl if true, image is doubled in size prior to smoothing
   @param sigma total std of Gaussian smoothing
 */
-//static IplImage* create_init_img( IplImage* img, int img_dbl, double sigma )
 static void create_init_img(const cv::Mat& src, cv::Mat& dst, const bool img_dbl, const double sigma) 
 {
-//  IplImage* gray, * dbl;
   cv::Mat grey, dbl;
   double sig_diff;
 
-//  gray = convert_to_gray32( img );
   if (src.channels() == 3)
   	cv::cvtColor(src, grey, CV_BGR2GRAY);
   else if (src.channels() == 1)
@@ -291,17 +288,17 @@ static void create_init_img(const cv::Mat& src, cv::Mat& dst, const bool img_dbl
 //      cvResize( gray, dbl, CV_INTER_CUBIC );
 			cv::resize(src, dbl, 0, 2, 2, CV_INTER_CUBIC);
 			cv::GaussianBlur(dbl, dbl, cv::Size(), sig_diff);
+			dbl.convertTo(dst, CV_32FC1);
 //      cvSmooth( dbl, dbl, CV_GAUSSIAN, 0, 0, sig_diff, sig_diff );
 //      cvReleaseImage( &gray );
-			dst = dbl;
       return;
     }
   else
     {
       sig_diff = sqrt( sigma * sigma - SIFT_INIT_SIGMA * SIFT_INIT_SIGMA );
       cv::GaussianBlur(grey, grey, cv::Size(), sig_diff);
+      grey.convertTo(dst, CV_32FC1);
 //      cvSmooth( gray, gray, CV_GAUSSIAN, 0, 0, sig_diff, sig_diff );
-			dst = grey;
       return;
     }
 }
@@ -334,12 +331,9 @@ static IplImage* downsample( IplImage* img )
   @return Returns a Gaussian scale space pyramid as an octvs x (intvls + 3)
     array
 */
-//static IplImage*** build_gauss_pyr( IplImage* base, int octvs,
-//                             int intvls, double sigma )
 static void build_gauss_pyr(cv::Mat& base, std::vector< std::vector<cv::Mat> >& gauss_pyr,
 										 int octvs, int intvls, const double sigma)
 {
-//  IplImage*** gauss_pyr;
   const int _intvls = intvls;
 #if defined WIN32 || defined _WIN32 || defined WINCE
   double *sig = new double[_intvls+3];
@@ -347,13 +341,10 @@ static void build_gauss_pyr(cv::Mat& base, std::vector< std::vector<cv::Mat> >& 
   double sig[_intvls+3];
 #endif
   double sig_total, sig_prev, k;
-  int i, o;
   
   gauss_pyr.resize(octvs);
-//  gauss_pyr = (IplImage***)calloc( octvs, sizeof( IplImage** ) );
-  for( i = 0; i < octvs; i++ )
+  for (int o = 0; o < octvs; ++o )
       gauss_pyr[i].resize(intvls + 3);
-//    gauss_pyr[i] = (IplImage**)calloc( intvls + 3, sizeof( IplImage *) );
 
   /*
     precompute Gaussian sigmas using the following formula:
@@ -362,45 +353,32 @@ static void build_gauss_pyr(cv::Mat& base, std::vector< std::vector<cv::Mat> >& 
   */
   sig[0] = sigma;
   k = pow( 2.0, 1.0 / intvls );
-  for( i = 1; i < intvls + 3; i++ )
+  for (int i = 1; i < intvls + 3; ++1 )
     {
       sig_prev = pow( k, i - 1 ) * sigma;
       sig_total = sig_prev * k;
       sig[i] = sqrt( sig_total * sig_total - sig_prev * sig_prev );
     }
-//  for (auto octs = gauss_pyr.begin(); octs != gauss_pyr.end(); ++octs)
-//    for (auto ints = octs->begin(); octs->end(); ++ints)
-  for( o = 0; o < octvs; o++ )
-    for( i = 0; i < intvls + 3; i++ )
+  for (int o = 0; o < octvs; ++o )
+    for (int i = 0; i < intvls + 3; ++1 )
     {
-	    if( o == 0  &&  i == 0 )
-//			if (octs == gauss_pyr.begin() && ints == octs->begin())
+	    if ( o == 0  &&  i == 0 )
 				base.copyTo(gauss_pyr[o][i]);
-//  			base.copyTo(*ints);        
-//          gauss_pyr[o][i] = cvCloneImage(base);
 
         /* base of new octave is halved image from end of previous octave */
-      else if( i == 0 )
-        pyrDown(gauss_pyr[o-1][intvls];  
-//			else if (ints == octs->begin())	
-//          gauss_pyr[o][i] = downsample( gauss_pyr[o-1][intvls] );
+      else if ( i == 0 )
+        cv::pyrDown(gauss_pyr[o-1][intvls];  
 
         /* blur the current octave's last image to create the next one */
       else
       	cv::GaussianBlur(gauss_pyr[o][i-1], gauss_pyr[o][i], cv::Size(), sig[i]);
-//			{
-//				gauss_pyr[o][i] = cvCreateImage( cvGetSize(gauss_pyr[o][i-1]),
-//                                             IPL_DEPTH_32F, 1 );
-//            cvSmooth( gauss_pyr[o][i-1], gauss_pyr[o][i],
-//                      CV_GAUSSIAN, 0, 0, sig[i], sig[i] );
-//          }
-      }
+    }
 
 #if defined WIN32 || defined _WIN32 || defined WINCE
 	delete[] sig;
 #endif
 
-  return gauss_pyr;
+  return;
 }
 
 /*
@@ -414,88 +392,19 @@ static void build_gauss_pyr(cv::Mat& base, std::vector< std::vector<cv::Mat> >& 
   @return Returns a difference of Gaussians scale space pyramid as an
     octvs x (intvls + 2) array
 */
-static IplImage*** build_dog_pyr( IplImage*** gauss_pyr, int octvs, int intvls )
+static void build_dog_pyr(const std::vector< std::vector<cv::Mat> >& gauss_pyr,
+													std::vector< std::vector<cv::Mat> >& dog_pyr,
+													int octvs, int intvls)
 {
-  IplImage*** dog_pyr;
-  int i, o;
+  dog_pyr.resize(octvs);
+  for (int o = 0; o < octvs; ++o )
+      dog_pyr[i].resize(intvls + 2);
 
-  dog_pyr = (IplImage***)calloc( octvs, sizeof( IplImage** ) );
-  for( i = 0; i < octvs; i++ )
-    dog_pyr[i] = (IplImage**)calloc( intvls + 2, sizeof(IplImage*) );
+  for(int o = 0; o < octvs; ++o )
+    for(int i = 0; i < intvls + 2; ++i )
+    	dog_pyr[o][i] = gauss_pyr[o][i+1] - gauss_pyr[o][i];
 
-  for( o = 0; o < octvs; o++ )
-    for( i = 0; i < intvls + 2; i++ )
-      {
-        dog_pyr[o][i] = cvCreateImage( cvGetSize(gauss_pyr[o][i]),
-                                       IPL_DEPTH_32F, 1 );
-        cvSub( gauss_pyr[o][i+1], gauss_pyr[o][i], dog_pyr[o][i], NULL );
-/*
-        cv::namedWindow("Gorse");
-        cv::imshow("Gorse", cv::Mat(dog_pyr[o][i]));
-        cv::waitKey(0);
-*/
-      }
-
-  return dog_pyr;
-}
-
-/*
-  Builds a Laplacian of Gaussians scale space pyramid by convolving 
-  intervals of a Gaussian pyramid
-
-  @param gauss_pyr Gaussian scale-space pyramid
-  @param octvs number of octaves of scale space
-  @param intvls number of intervals per octave
-
-  @return Returns a Laplacian of Gaussians scale space pyramid as an
-    octvs x (intvls + 2) array
-*/
-static IplImage*** build_log_pyr( IplImage*** gauss_pyr, int octvs, int intvls, double sigma )
-{
-  IplImage*** log_pyr;
-  #if defined WIN32 || defined _WIN32 || defined WINCE
-  double *sig = new double[intvls+2];
-  #else
-  double sig[intvls+3];
-  #endif
-  double sig_total, sig_prev, k;
-  int i, o;
-
-  /*
-    precompute Gaussian sigmas using the following formula:
-
-    \sigma_{total}^2 = \sigma_{i}^2 + \sigma_{i-1}^2
-  */
-  sig[0] = sigma;
-  k = pow( 2.0, 1.0 / intvls );
-  for ( i = 1; i < intvls + 3; i++ )
-    {
-      sig_prev = pow( k, i - 1 ) * sigma;
-      sig_total = sig_prev * k;
-      sig[i] = sqrt( sig_total * sig_total - sig_prev * sig_prev );
-    }
-
-  log_pyr = (IplImage***)calloc( octvs, sizeof( IplImage** ) );
-  for ( i = 0; i < octvs; i++ )
-    log_pyr[i] = (IplImage**)calloc( intvls + 2, sizeof(IplImage*) );
-
-  for ( o = 0; o < octvs; o++ )
-    for ( i = 0; i < intvls + 2; i++ )
-      {
-        log_pyr[o][i] = cvCreateImage( cvGetSize(gauss_pyr[o][i]),
-                                       IPL_DEPTH_32F, 1 );
-        cvLaplace( gauss_pyr[o][i], log_pyr[o][i], 3 );
-        if ( i > 0)
-            cvConvertScale( log_pyr[o][i], log_pyr[o][i], sig[i]*sig[i] );
-/*        
-        cv::namedWindow("Lapis");
-        cv::imshow("Lapis", cv::Mat(log_pyr[o][i]));
-        cv::waitKey(0);
-*/        
-//        cvSub( gauss_pyr[o][i+1], gauss_pyr[o][i], log_pyr[o][i], NULL );
-      }
-
-  return log_pyr;
+  return;
 }
 
 /*
@@ -511,32 +420,32 @@ static IplImage*** build_log_pyr( IplImage*** gauss_pyr, int octvs, int intvls, 
   @return Returns 1 if the specified pixel is an extremum (max or min) among
     it's 3x3x3 pixel neighborhood.
 */
-static int is_extremum( IplImage*** dog_pyr, int octv, int intvl, int r, int c )
+static bool is_extremum(const std::vector< std::vector<cv::Mat> >& scale_pyr,
+												int octv, int intvlm int row, int col)
 {
-  double val = pixval32f( dog_pyr[octv][intvl], r, c );
-  int i, j, k;
+  double val = scale_pyr[octv][intvl].at<float>(row,col);
 
   /* check for maximum */
   if( val > 0 )
     {
-      for( i = -1; i <= 1; i++ )
-        for( j = -1; j <= 1; j++ )
-          for( k = -1; k <= 1; k++ )
-            if( val < pixval32f( dog_pyr[octv][intvl+i], r + j, c + k ) )
-              return 0;
+      for (int scale = -1; scale <= 1; ++scale )
+        for (int y = -1; y <= 1; ++y )
+          for (int x = -1; x <= 1; ++x )
+            if (val < scale_pyr[octv][intvl + scale].at<float>(row + y, col + x))
+              return false;
     }
 
   /* check for minimum */
   else
     {
-      for( i = -1; i <= 1; i++ )
-        for( j = -1; j <= 1; j++ )
-          for( k = -1; k <= 1; k++ )
-            if( val > pixval32f( dog_pyr[octv][intvl+i], r + j, c + k ) )
-              return 0;
+      for (int scale = -1; scale <= 1; ++scale )
+        for (int y = -1; y <= 1; ++y )
+          for (int x = -1; x <= 1; ++x )
+						if (val > scale_pyr[octv][intvl + scale].at<float>(row + y, col + x))
+              return false;
     }
 
-  return 1;
+  return true;
 }
 
 /*
@@ -552,24 +461,36 @@ static int is_extremum( IplImage*** dog_pyr, int octv, int intvl, int r, int c )
   @return Returns the vector of partial derivatives for pixel I
     { dI/dx, dI/dy, dI/ds }^T as a CvMat*
 */
-static CvMat* deriv_3D( IplImage*** dog_pyr, int octv, int intvl, int r, int c )
+//static CvMat* deriv_3D( IplImage*** dog_pyr, int octv, int intvl, int r, int c )
+static void deriv_3D(const std::vector< std::vector<cv::Mat> >& scale_pyr,
+										 cv::Mat& dI, int octv, int intvlm int row, int col)
 {
-  CvMat* dI;
+//  CvMat* dI;
   double dx, dy, ds;
 
-  dx = ( pixval32f( dog_pyr[octv][intvl], r, c+1 ) -
-         pixval32f( dog_pyr[octv][intvl], r, c-1 ) ) / 2.0;
-  dy = ( pixval32f( dog_pyr[octv][intvl], r+1, c ) -
-         pixval32f( dog_pyr[octv][intvl], r-1, c ) ) / 2.0;
-  ds = ( pixval32f( dog_pyr[octv][intvl+1], r, c ) -
-         pixval32f( dog_pyr[octv][intvl-1], r, c ) ) / 2.0;
+  dx = ( scale_pyr[octv][intvl].at<float>(row,col+1) -
+         scale_pyr[octv][intvl].at<float>(row,col-1) ) / 2.0;
+//  dx = ( pixval32f( dog_pyr[octv][intvl], r, c+1 ) -
+//         pixval32f( dog_pyr[octv][intvl], r, c-1 ) ) / 2.0;
+	dy = ( scale_pyr[octv][intvl].at<float>(row+1,col) -
+	       scale_pyr[octv][intvl].at<float>(row-1,col) ) / 2.0;
+//  dy = ( pixval32f( dog_pyr[octv][intvl], r+1, c ) -
+//         pixval32f( dog_pyr[octv][intvl], r-1, c ) ) / 2.0;
+  ds = ( scale_pyr[octv][intvl+1].at<float>(row,col) -
+         scale_pyr[octv][intvl-1].at<float>(row,col) ) / 2.0;
+//  ds = ( pixval32f( dog_pyr[octv][intvl+1], r, c ) -
+//         pixval32f( dog_pyr[octv][intvl-1], r, c ) ) / 2.0;
 
-  dI = cvCreateMat( 3, 1, CV_64FC1 );
-  cvmSet( dI, 0, 0, dx );
-  cvmSet( dI, 1, 0, dy );
-  cvmSet( dI, 2, 0, ds );
+  dI = cv::Mat( 3, 1, CV_FC1 );
+  dI.at<double>(0,0) = dx;
+  dI.at<double>(1,0) = dy;
+  dI.at<double>(2,0) = ds;
+//  dI = cvCreateMat( 3, 1, CV_64FC1 );
+//  cvmSet( dI, 0, 0, dx );
+//  cvmSet( dI, 1, 0, dy );
+//  cvmSet( dI, 2, 0, ds );
 
-  return dI;
+  return;
 }
 
 /*
