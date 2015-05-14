@@ -400,7 +400,7 @@ static void build_gauss_pyr(cv::Mat& base, std::vector< std::vector<cv::Mat> >& 
 	delete[] sig;
 #endif
 
-  return;
+  return gauss_pyr;
 }
 
 /*
