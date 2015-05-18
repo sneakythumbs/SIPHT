@@ -44,14 +44,18 @@ int main(int argc, char** argv )
 	SIFT::CommonParams common;
 	SIFT::DetectorParams detector;
 	SIFT::DescriptorParams descriptor;
+	cv::SIFT::CommonParams cvcommon;
+	cv::SIFT::DetectorParams cvdetector;
+	cv::SIFT::DescriptorParams cvdescriptor;
 
 	SIFT sipht(common, detector, descriptor);
+	cv::SIFT sift(cvcommon, cvdetector, cvdescriptor);
 
 	cv::Mat img1_descriptors, img2_descriptors;
 
     sipht.setScaleType(atoi(argv[4]));
     sipht(img1, mask, img1_points, img1_descriptors);
-    sipht(img2, mask, img2_points, img2_descriptors);
+    sift(img2, mask, img2_points, img2_descriptors);
     long count = 0;
     double tol = 5E-1;
     for (auto i : img1_points)
@@ -78,7 +82,7 @@ int main(int argc, char** argv )
     
     cv::waitKey(0);
 // */
-/*
+//*
 	cv::Ptr<cv::DescriptorMatcher> catcher = cv::DescriptorMatcher::create("BruteForce");
 	std::vector< std::vector<cv::DMatch> > kmatches;
 	catcher->knnMatch(img1_descriptors, img2_descriptors, kmatches, 2);
@@ -88,7 +92,7 @@ int main(int argc, char** argv )
 
 	for (unsigned i = 0; i < len; ++i)
 	{
-		if (kmatches[i][0].distance / kmatches[i][1].distance < 0.7)
+//		if (kmatches[i][0].distance / kmatches[i][1].distance < 0.7)
 			matches.push_back(kmatches[i][1]);
 	}
 		
@@ -100,7 +104,7 @@ int main(int argc, char** argv )
     cv::imshow("Matches", output);
     
     cv::waitKey(0);
-*/
+//*/
     
     return 0;
 }

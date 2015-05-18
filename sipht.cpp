@@ -270,9 +270,9 @@ static void create_init_img(const cv::Mat& src, cv::Mat& dst, const bool img_dbl
   double sig_diff;
 
   if (src.channels() == 3)
-  	cv::cvtColor(src, grey, CV_BGR2GRAY);
+  	cv::cvtColor(src * 1.0/255, grey, CV_BGR2GRAY);
   else if (src.channels() == 1)
-    grey = src;
+    grey = src * 1.0/255;
   else
   {
   	std::cout << "not an rgb or greyscale image\n";
@@ -286,7 +286,7 @@ static void create_init_img(const cv::Mat& src, cv::Mat& dst, const bool img_dbl
 //      dbl = cvCreateImage( cvSize( img->width*2, img->height*2 ),
 //                           IPL_DEPTH_32F, 1 );
 //      cvResize( gray, dbl, CV_INTER_CUBIC );
-			cv::resize(src, dbl, 0, 2, 2, CV_INTER_CUBIC);
+			cv::resize(grey, dbl, cv::Size(), 2, 2, CV_INTER_CUBIC);
 			cv::GaussianBlur(dbl, dbl, cv::Size(), sig_diff);
 			dbl.convertTo(dst, CV_32FC1);
 //      cvSmooth( dbl, dbl, CV_GAUSSIAN, 0, 0, sig_diff, sig_diff );
@@ -344,7 +344,7 @@ static void build_gauss_pyr(cv::Mat& base, std::vector< std::vector<cv::Mat> >& 
   
   gauss_pyr.resize(octvs);
   for (int o = 0; o < octvs; ++o )
-      gauss_pyr[i].resize(intvls + 3);
+      gauss_pyr[o].resize(intvls + 3);
 
   /*
     precompute Gaussian sigmas using the following formula:
@@ -353,21 +353,21 @@ static void build_gauss_pyr(cv::Mat& base, std::vector< std::vector<cv::Mat> >& 
   */
   sig[0] = sigma;
   k = pow( 2.0, 1.0 / intvls );
-  for (int i = 1; i < intvls + 3; ++1 )
+  for (int i = 1; i < intvls + 3; ++i )
     {
       sig_prev = pow( k, i - 1 ) * sigma;
       sig_total = sig_prev * k;
       sig[i] = sqrt( sig_total * sig_total - sig_prev * sig_prev );
     }
   for (int o = 0; o < octvs; ++o )
-    for (int i = 0; i < intvls + 3; ++1 )
+    for (int i = 0; i < intvls + 3; ++i )
     {
 	    if ( o == 0  &&  i == 0 )
 				base.copyTo(gauss_pyr[o][i]);
 
         /* base of new octave is halved image from end of previous octave */
       else if ( i == 0 )
-        cv::pyrDown(gauss_pyr[o-1][intvls];  
+        cv::resize(gauss_pyr[o-1][intvls], gauss_pyr[o][i], cv::Size(), 0.5, 0.5, CV_INTER_NN);
 
         /* blur the current octave's last image to create the next one */
       else
@@ -398,7 +398,7 @@ static void build_dog_pyr(const std::vector< std::vector<cv::Mat> >& gauss_pyr,
 {
   dog_pyr.resize(octvs);
   for (int o = 0; o < octvs; ++o )
-      dog_pyr[i].resize(intvls + 2);
+      dog_pyr[o].resize(intvls + 2);
 
   for(int o = 0; o < octvs; ++o )
     for(int i = 0; i < intvls + 2; ++i )
@@ -421,7 +421,7 @@ static void build_dog_pyr(const std::vector< std::vector<cv::Mat> >& gauss_pyr,
     it's 3x3x3 pixel neighborhood.
 */
 static bool is_extremum(const std::vector< std::vector<cv::Mat> >& scale_pyr,
-												int octv, int intvlm int row, int col)
+												int octv, int intvl, int row, int col)
 {
   double val = scale_pyr[octv][intvl].at<float>(row,col);
 
@@ -463,7 +463,7 @@ static bool is_extremum(const std::vector< std::vector<cv::Mat> >& scale_pyr,
 */
 //static CvMat* deriv_3D( IplImage*** dog_pyr, int octv, int intvl, int r, int c )
 static void deriv_3D(const std::vector< std::vector<cv::Mat> >& scale_pyr,
-										 cv::Mat& dI, int octv, int intvlm int row, int col)
+										 cv::Mat& dI, int octv, int intvl, int row, int col)
 {
 //  CvMat* dI;
   double dx, dy, ds;
@@ -481,7 +481,7 @@ static void deriv_3D(const std::vector< std::vector<cv::Mat> >& scale_pyr,
 //  ds = ( pixval32f( dog_pyr[octv][intvl+1], r, c ) -
 //         pixval32f( dog_pyr[octv][intvl-1], r, c ) ) / 2.0;
 
-  dI = cv::Mat( 3, 1, CV_FC1 );
+  dI = cv::Mat( 3, 1, CV_64FC1 );
   dI.at<double>(0,0) = dx;
   dI.at<double>(1,0) = dy;
   dI.at<double>(2,0) = ds;
@@ -508,12 +508,49 @@ static void deriv_3D(const std::vector< std::vector<cv::Mat> >& scale_pyr,
   | Ixy  Iyy  Iys | <BR>
   \ Ixs  Iys  Iss /
 */
-static CvMat* hessian_3D( IplImage*** dog_pyr, int octv, int intvl, int r,
-                          int c )
+//static CvMat* hessian_3D( IplImage*** dog_pyr, int octv, int intvl, int r,
+//                          int c )
+static void hessian_3D( const std::vector< std::vector<cv::Mat> >& scale_pyr,
+												cv::Mat& H, int octv, int intvl, int row, int col)
 {
-  CvMat* H;
-  double v, dxx, dyy, dss, dxy, dxs, dys;
+//  CvMat* H;
+  double val, dxx, dyy, dss, dxy, dxs, dys;
 
+
+  val = scale_pyr[octv][intvl].at<float>(row,col);
+  dxx = ( scale_pyr[octv][intvl].at<float>(row,col+1) +
+          scale_pyr[octv][intvl].at<float>(row,col-1) - 2*val );
+  dyy = ( scale_pyr[octv][intvl].at<float>(row+1,col) +
+          scale_pyr[octv][intvl].at<float>(row-1,col) - 2*val );
+  dss = ( scale_pyr[octv][intvl+1].at<float>(row,col) +
+          scale_pyr[octv][intvl-1].at<float>(row,col) - 2*val );
+  dxy = ( scale_pyr[octv][intvl].at<float>(row+1,col+1) -
+          scale_pyr[octv][intvl].at<float>(row+1,col-1) -
+          scale_pyr[octv][intvl].at<float>(row-1,col+1) + 
+          scale_pyr[octv][intvl].at<float>(row-1,col-1) ) / 4.0;
+  dxs = ( scale_pyr[octv][intvl+1].at<float>(row,col+1) -
+          scale_pyr[octv][intvl+1].at<float>(row,col-1) -
+          scale_pyr[octv][intvl-1].at<float>(row,col+1) + 
+          scale_pyr[octv][intvl-1].at<float>(row,col-1) ) / 4.0;
+  dys = ( scale_pyr[octv][intvl+1].at<float>(row+1,col) -
+          scale_pyr[octv][intvl+1].at<float>(row-1,col) -
+          scale_pyr[octv][intvl-1].at<float>(row+1,col) + 
+          scale_pyr[octv][intvl-1].at<float>(row-1,col) ) / 4.0;
+          
+  H = cv::Mat(3,3,CV_64FC1);
+  H.at<double>(0,0) = dxx;
+  H.at<double>(0,1) = dxy;
+  H.at<double>(0,2) = dxs;
+  H.at<double>(1,0) = dxy;
+  H.at<double>(1,1) = dyy;
+  H.at<double>(1,2) = dys;
+  H.at<double>(2,0) = dxs;
+  H.at<double>(2,1) = dys;
+  H.at<double>(2,2) = dss;
+  
+  return;
+  
+/* 
   v = pixval32f( dog_pyr[octv][intvl], r, c );
   dxx = ( pixval32f( dog_pyr[octv][intvl], r, c+1 ) +
           pixval32f( dog_pyr[octv][intvl], r, c-1 ) - 2 * v );
@@ -546,6 +583,7 @@ static CvMat* hessian_3D( IplImage*** dog_pyr, int octv, int intvl, int r,
   cvmSet( H, 2, 2, dss );
 
   return H;
+  */
 }
 
 /*
@@ -562,26 +600,36 @@ static CvMat* hessian_3D( IplImage*** dog_pyr, int octv, int intvl, int r,
   @param xc output as interpolated subpixel increment to col
 */
 
-static void interp_step( IplImage*** dog_pyr, int octv, int intvl, int r, int c,
-                         double* xi, double* xr, double* xc )
+//static void interp_step( IplImage*** dog_pyr, int octv, int intvl, int r, int c,
+//                         double* xi, double* xr, double* xc )
+static void interp_step( const std::vector< std::vector<cv::Mat> >& scale_pyr,
+                         int octv, int intvl, int row, int col,
+                         double& xi, double& xr, double& xc )
 {
-  CvMat* dD, * H, * H_inv, X;
-  double x[3] = { 0 };
+//  CvMat* dD, * H, * H_inv, X;
+  cv::Mat dD, H, X;
+//  double x[3] = { 0 };
 
-  dD = deriv_3D( dog_pyr, octv, intvl, r, c );
-  H = hessian_3D( dog_pyr, octv, intvl, r, c );
-  H_inv = cvCreateMat( 3, 3, CV_64FC1 );
-  cvInvert( H, H_inv, CV_SVD );
-  cvInitMatHeader( &X, 3, 1, CV_64FC1, x, CV_AUTOSTEP );
-  cvGEMM( H_inv, dD, -1, NULL, 0, &X, 0 );
+//  dD = deriv_3D( dog_pyr, octv, intvl, r, c );
+//  H = hessian_3D( dog_pyr, octv, intvl, r, c );
+//  H_inv = cvCreateMat( 3, 3, CV_64FC1 );
+  deriv_3D( scale_pyr, dD, octv, intvl, row, col);
+  hessian_3D( scale_pyr, H, octv, intvl, row, col);
+//  cvInvert( H, H_inv, CV_SVD );
+//  cvInitMatHeader( &X, 3, 1, CV_64FC1, x, CV_AUTOSTEP );
+//  cvGEMM( H_inv, dD, -1, NULL, 0, &X, 0 );
+  cv::gemm( H.inv(), dD, -1, cv::Mat(), 0, X);
+  xi = X.at<double>(2);
+  xr = X.at<double>(1);
+  xc = X.at<double>(0);
 
-  cvReleaseMat( &dD );
-  cvReleaseMat( &H );
-  cvReleaseMat( &H_inv );
+//  cvReleaseMat( &dD );
+//  cvReleaseMat( &H );
+//  cvReleaseMat( &H_inv );
 
-  *xi = x[2];
-  *xr = x[1];
-  *xc = x[0];
+//  *xi = x[2];
+//  *xr = x[1];
+//  *xc = x[0];
 }
 
 /*
@@ -599,19 +647,29 @@ static void interp_step( IplImage*** dog_pyr, int octv, int intvl, int r, int c,
 
   @param Returns interpolated contrast.
 */
-static double interp_contr( IplImage*** dog_pyr, int octv, int intvl, int r,
-                            int c, double xi, double xr, double xc )
+//static double interp_contr( IplImage*** dog_pyr, int octv, int intvl, int r,
+//                            int c, double xi, double xr, double xc )
+static double interp_contr( const std::vector< std::vector<cv::Mat> >& scale_pyr,
+                         int octv, int intvl, int row, int col,
+                         double& xi, double& xr, double& xc )
 {
-  CvMat* dD, X, T;
-  double t[1], x[3] = { xc, xr, xi };
+//  CvMat* dD, X, T;
+  cv::Mat dD, X, T;
+  X.push_back(xc);
+  X.push_back(xr);
+  X.push_back(xi);
+//  double t[1], x[3] = { xc, xr, xi };
 
-  cvInitMatHeader( &X, 3, 1, CV_64FC1, x, CV_AUTOSTEP );
-  cvInitMatHeader( &T, 1, 1, CV_64FC1, t, CV_AUTOSTEP );
-  dD = deriv_3D( dog_pyr, octv, intvl, r, c );
-  cvGEMM( dD, &X, 1, NULL, 0, &T,  CV_GEMM_A_T );
-  cvReleaseMat( &dD );
-
-  return pixval32f( dog_pyr[octv][intvl], r, c ) + t[0] * 0.5;
+//  cvInitMatHeader( &X, 3, 1, CV_64FC1, x, CV_AUTOSTEP );
+//  cvInitMatHeader( &T, 1, 1, CV_64FC1, t, CV_AUTOSTEP );
+//  dD = deriv_3D( dog_pyr, octv, intvl, r, c );
+  deriv_3D( scale_pyr, dD, octv, intvl, row, col);
+  //cv::gemm( dD, X, 1, cv::Mat(), 0, T, 1);
+  T = dD.t() * X;
+//  cvGEMM( dD, &X, 1, NULL, 0, &T,  CV_GEMM_A_T );
+//  cvReleaseMat( &dD );
+    return scale_pyr[octv][intvl].at<float>(row,col) + T.at<double>(0) * 0.5;
+//  return pixval32f( dog_pyr[octv][intvl], r, c ) + t[0] * 0.5;
 }
 
 /*
@@ -651,9 +709,12 @@ static struct feature* new_feature( void )
     if contrast at the interpolated loation was too low.  If a feature is
     returned, its scale, orientation, and descriptor are yet to be determined.
 */
-static struct feature* interp_extremum( IplImage*** dog_pyr, int octv,
-                                        int intvl, int r, int c, int intvls,
-                                        double contr_thr )
+//static struct feature* interp_extremum( IplImage*** dog_pyr, int octv,
+//                                        int intvl, int r, int c, int intvls,
+//                                        double contr_thr )
+static struct feature* interp_extremum(const std::vector< std::vector<cv::Mat> >& scale_pyr,
+                                       int octv, int intvl, int row, int col, int intvls,
+                                       double contr_thr)
 {
   struct feature* feat;
   struct detection_data* ddata;
@@ -662,20 +723,20 @@ static struct feature* interp_extremum( IplImage*** dog_pyr, int octv,
 
   while( i < SIFT_MAX_INTERP_STEPS )
     {
-      interp_step( dog_pyr, octv, intvl, r, c, &xi, &xr, &xc );
+      interp_step( scale_pyr, octv, intvl, row, col, xi, xr, xc );
       if( std::abs( xi ) < 0.5  &&  std::abs( xr ) < 0.5  &&  std::abs( xc ) < 0.5 )
         break;
 
-      c += cvRound( xc );
-      r += cvRound( xr );
+      col += cvRound( xc );
+      row += cvRound( xr );
       intvl += cvRound( xi );
 
       if( intvl < 1  ||
           intvl > intvls  ||
-          c < SIFT_IMG_BORDER  ||
-          r < SIFT_IMG_BORDER  ||
-          c >= dog_pyr[octv][0]->width - SIFT_IMG_BORDER  ||
-          r >= dog_pyr[octv][0]->height - SIFT_IMG_BORDER )
+          col < SIFT_IMG_BORDER  ||
+          row < SIFT_IMG_BORDER  ||
+          col >= scale_pyr[octv][0].cols - SIFT_IMG_BORDER  ||
+          row >= scale_pyr[octv][0].rows - SIFT_IMG_BORDER )
         {
           return NULL;
         }
@@ -687,16 +748,16 @@ static struct feature* interp_extremum( IplImage*** dog_pyr, int octv,
   if( i >= SIFT_MAX_INTERP_STEPS )
     return NULL;
 
-  contr = interp_contr( dog_pyr, octv, intvl, r, c, xi, xr, xc );
+  contr = interp_contr( scale_pyr, octv, intvl, row, col, xi, xr, xc );
   if( std::abs( contr ) < contr_thr / intvls )
     return NULL;
 
   feat = new_feature();
   ddata = feat->feature_data;
-  feat->x = ( c + xc ) * pow( 2.0, octv );
-  feat->y = ( r + xr ) * pow( 2.0, octv );
-  ddata->r = r;
-  ddata->c = c;
+  feat->x = ( col + xc ) * pow( 2.0, octv );
+  feat->y = ( row + xr ) * pow( 2.0, octv );
+  ddata->r = row;
+  ddata->c = col;
   ddata->octv = octv;
   ddata->intvl = intvl;
   ddata->subintvl = xi;
@@ -717,11 +778,20 @@ static struct feature* interp_extremum( IplImage*** dog_pyr, int octv,
   @return Returns 0 if the feature at (r,c) in dog_img is sufficiently
     corner-like or 1 otherwise.
 */
-static int is_too_edge_like( IplImage* dog_img, int r, int c, int curv_thr )
+//static bool is_too_edge_like( IplImage* dog_img, int r, int c, int curv_thr )
+static bool is_too_edge_like(const cv::Mat& scale_img, int row, int col, int curv_thr)
 {
-  double d, dxx, dyy, dxy, tr, det;
+//  double d, dxx, dyy, dxy, tr, det;
 
   /* principal curvatures are computed using the trace and det of Hessian */
+  double val = scale_img.at<float>(row,col);
+  double dxx = scale_img.at<float>(row,col+1) + scale_img.at<float>(row,col-1) - 2*val;
+  double dyy = scale_img.at<float>(row+1,col) + scale_img.at<float>(row-1,col) - 2*val;
+  double dxy = ( scale_img.at<float>(row+1,col+1) - scale_img.at<float>(row+1,col-1) -
+               scale_img.at<float>(row-1,col+1) + scale_img.at<float>(row-1,col-1) ) / 4.0;
+  double trace = dxx + dyy;
+  double det = dxx*dyy - dxy*dxy;
+  /*
   d = pixval32f(dog_img, r, c);
   dxx = pixval32f( dog_img, r, c+1 ) + pixval32f( dog_img, r, c-1 ) - 2 * d;
   dyy = pixval32f( dog_img, r+1, c ) + pixval32f( dog_img, r-1, c ) - 2 * d;
@@ -729,14 +799,14 @@ static int is_too_edge_like( IplImage* dog_img, int r, int c, int curv_thr )
           pixval32f(dog_img, r-1, c+1) + pixval32f(dog_img, r-1, c-1) ) / 4.0;
   tr = dxx + dyy;
   det = dxx * dyy - dxy * dxy;
-
+*/
   /* negative determinant -> curvatures have different signs; reject feature */
   if( det <= 0 )
-    return 1;
+    return true;
 
-  if( tr * tr / det < ( curv_thr + 1.0 )*( curv_thr + 1.0 ) / curv_thr )
-    return 0;
-  return 1;
+  if( trace * trace / det < ( curv_thr + 1.0 )*( curv_thr + 1.0 ) / curv_thr )
+    return false;
+  return true;
 }
 
 /*
@@ -753,9 +823,12 @@ static int is_too_edge_like( IplImage* dog_img, int r, int c, int curv_thr )
   @return Returns an array of detected features whose scales, orientations,
     and descriptors are yet to be determined.
 */
-static CvSeq* scale_space_extrema( IplImage*** dog_pyr, int octvs, int intvls,
-                                   double contr_thr, int curv_thr,
-                                   CvMemStorage* storage )
+//static CvSeq* scale_space_extrema( IplImage*** dog_pyr, int octvs, int intvls,
+//                                   double contr_thr, int curv_thr,
+//                                   CvMemStorage* storage )
+static CvSeq* scale_space_extrema(const std::vector< std::vector<cv::Mat> >& scale_pyr,
+                                 int octvs, int intvls, double contr_thr, int curv_thr,
+                                 CvMemStorage* storage)
 {
   CvSeq* features;
   double prelim_contr_thr = 0.5 * contr_thr / intvls;
@@ -766,17 +839,17 @@ static CvSeq* scale_space_extrema( IplImage*** dog_pyr, int octvs, int intvls,
   features = cvCreateSeq( 0, sizeof(CvSeq), sizeof(struct feature), storage );
   for( o = 0; o < octvs; o++ )
     for( i = 1; i <= intvls; i++ )
-      for(r = SIFT_IMG_BORDER; r < dog_pyr[o][0]->height-SIFT_IMG_BORDER; r++)
-        for(c = SIFT_IMG_BORDER; c < dog_pyr[o][0]->width-SIFT_IMG_BORDER; c++)
+      for(r = SIFT_IMG_BORDER; r < scale_pyr[o][0].rows-SIFT_IMG_BORDER; r++)
+        for(c = SIFT_IMG_BORDER; c < scale_pyr[o][0].cols-SIFT_IMG_BORDER; c++)
           /* perform preliminary check on contrast */
-          if( std::abs( pixval32f( dog_pyr[o][i], r, c ) ) > prelim_contr_thr )
-            if( is_extremum( dog_pyr, o, i, r, c ) )
+          if( std::abs( scale_pyr[o][i].at<float>( r, c ) ) > prelim_contr_thr )
+            if( is_extremum( scale_pyr, o, i, r, c ) )
               {
-                feat = interp_extremum(dog_pyr, o, i, r, c, intvls, contr_thr);
+                feat = interp_extremum(scale_pyr, o, i, r, c, intvls, contr_thr);
                 if( feat )
                   {
                     ddata = feat->feature_data;
-                    if( ! is_too_edge_like( dog_pyr[ddata->octv][ddata->intvl],
+                    if( ! is_too_edge_like( scale_pyr[ddata->octv][ddata->intvl],
                                             ddata->r, ddata->c, curv_thr ) )
                       {
                         cvSeqPush( features, feat );
@@ -850,17 +923,23 @@ static void adjust_for_img_dbl( CvSeq* features )
   @return Returns 1 if the specified pixel is a valid one and sets mag and
     ori accordingly; otherwise returns 0
 */
-static int calc_grad_mag_ori( IplImage* img, int r, int c, double* mag,
-                              double* ori )
+//static int calc_grad_mag_ori( IplImage* img, int r, int c, double* mag,
+//                              double* ori )
+static int calc_grad_mag_ori(const cv::Mat& img, int row, int col, double& mag,
+							 double& ori)
 {
   double dx, dy;
 
-  if( r > 0  &&  r < img->height - 1  &&  c > 0  &&  c < img->width - 1 )
+  if( row > 0  &&  row < img.rows - 1  &&  col > 0  &&  col < img.cols - 1 )
     {
-      dx = pixval32f( img, r, c+1 ) - pixval32f( img, r, c-1 );
-      dy = pixval32f( img, r-1, c ) - pixval32f( img, r+1, c );
-      *mag = sqrt( dx*dx + dy*dy );
-      *ori = atan2( dy, dx );
+      dx = img.at<float>(row,col+1) - img.at<float>(row,col-1);
+      dy = img.at<float>(row-1,col) - img.at<float>(row+1,col);
+      mag = sqrt(dx*dx + dy*dy);
+      ori = atan2(dy,dx);
+//      dx = pixval32f( img, r, c+1 ) - pixval32f( img, r, c-1 );
+//      dy = pixval32f( img, r-1, c ) - pixval32f( img, r+1, c );
+//      *mag = sqrt( dx*dx + dy*dy );
+//      *ori = atan2( dy, dx );
       return 1;
     }
 
@@ -881,7 +960,7 @@ static int calc_grad_mag_ori( IplImage* img, int r, int c, double* mag,
   @return Returns an n-element array containing an orientation histogram
     representing orientations between 0 and 2 PI.
 */
-static double* ori_hist( IplImage* img, int r, int c, int n, int rad,
+static double* ori_hist(const cv::Mat& img, int r, int c, int n, int rad,
                          double sigma )
 {
   double* hist;
@@ -892,7 +971,7 @@ static double* ori_hist( IplImage* img, int r, int c, int n, int rad,
   exp_denom = 2.0 * sigma * sigma;
   for( i = -rad; i <= rad; i++ )
     for( j = -rad; j <= rad; j++ )
-      if( calc_grad_mag_ori( img, r + i, c + j, &mag, &ori ) )
+      if( calc_grad_mag_ori( img, r + i, c + j, mag, ori ) )
         {
           w = exp( -( i*i + j*j ) / exp_denom );
           bin = cvRound( n * ( ori + CV_PI ) / PI2 );
@@ -1011,7 +1090,8 @@ static void add_good_ori_features( CvSeq* features, double* hist, int n,
   @param features an array of image features
   @param gauss_pyr Gaussian scale space pyramid
 */
-static void calc_feature_oris( CvSeq* features, IplImage*** gauss_pyr )
+static void calc_feature_oris( CvSeq* features, 
+                          const std::vector< std::vector<cv::Mat> >& gauss_pyr )
 {
   struct feature* feat;
   struct detection_data* ddata;
@@ -1110,8 +1190,11 @@ static void interp_hist_entry( double*** hist, double rbin, double cbin,
 
   @return Returns a d x d array of n-bin orientation histograms.
 */
-static double*** descr_hist( IplImage* img, int r, int c, double ori,
-                             double scl, int d, int n )
+//static double*** descr_hist( IplImage* img, int r, int c, double ori,
+//                             double scl, int d, int n )
+static double*** descr_hist(const cv::Mat& img, int row, int col, double ori,
+                            double scl, int d, int n)
+
 {
   double*** hist;
   double cos_t, sin_t, hist_width, exp_denom, r_rot, c_rot, grad_mag,
@@ -1146,7 +1229,7 @@ static double*** descr_hist( IplImage* img, int r, int c, double ori,
         cbin = c_rot + d / 2 - 0.5;
 
         if( rbin > -1.0  &&  rbin < d  &&  cbin > -1.0  &&  cbin < d )
-          if( calc_grad_mag_ori( img, r + i, c + j, &grad_mag, &grad_ori ))
+          if( calc_grad_mag_ori( img, row + i, col + j, grad_mag, grad_ori ))
             {
               grad_ori -= ori;
               while( grad_ori < 0.0 )
@@ -1289,8 +1372,9 @@ static void release_pyr( IplImage**** pyr, int octvs, int n )
   @param d width of 2D array of orientation histograms
   @param n number of bins per orientation histogram
 */
-static void compute_descriptors( CvSeq* features, IplImage*** gauss_pyr, int d,
-                                 int n )
+static void compute_descriptors(CvSeq* features, 
+                                const std::vector< std::vector<cv::Mat> >& gauss_pyr,
+                                int d, int n )
 {
   struct feature* feat;
   struct detection_data* ddata;
@@ -1312,9 +1396,9 @@ static void compute_descriptors( CvSeq* features, IplImage*** gauss_pyr, int d,
 
 struct ImagePyrData
 {
-    ImagePyrData( cv::Mat& img, int octvs, int intvls, double _sigma, bool img_dbl, int scaleType )
+    ImagePyrData( cv::Mat& img, int octvs, int intvls, double _sigma, bool img_dbl)
     {
-        if( ! img )
+        if( ! img.data )
           CV_Error( CV_StsBadArg, "NULL image pointer" );
 
         /* build scale space pyramid; smallest dimension of top level is ~4 pixels */
@@ -1323,35 +1407,31 @@ struct ImagePyrData
         int max_octvs = static_cast<int>( log( static_cast<double>(MIN( init_img.cols, init_img.rows ))) / log(2.0) - 2.0);
         octvs = std::max( std::min( octvs, max_octvs ), 1 );
 
-        gauss_pyr = build_gauss_pyr( init_img, octvs, intvls, _sigma );
-        if ( scaleType == LoG )
-        	dog_pyr = build_log_pyr( gauss_pyr, octvs, intvls, _sigma );
-        else
-        	dog_pyr = build_dog_pyr( gauss_pyr, octvs, intvls );
+        build_gauss_pyr( init_img, gauss_pyr, octvs, intvls, _sigma );
+      	build_dog_pyr( gauss_pyr, scale_pyr, octvs, intvls );
 
         octaves = octvs;
         intervals = intvls;
         sigma = _sigma;
         is_img_dbl = img_dbl != 0 ? true : false;
     }
-
+/*
     virtual ~ImagePyrData()
     {
         cvReleaseImage( &init_img );
         release_pyr( &gauss_pyr, octaves, intervals + 3 );
         release_pyr( &dog_pyr, octaves, intervals + 2 );
     }
-
+*/
     cv::Mat init_img;
-    std::vector< std::vector<cv::Mat> > gauss_pyr, dog_pyr;
+    std::vector< std::vector<cv::Mat> > gauss_pyr, scale_pyr;
 //    IplImage*** gauss_pyr, *** dog_pyr;
 
     int octaves, intervals;
     double sigma;
 
     bool is_img_dbl;
-    
-    enum { DoG, LoG };
+
 };
 
 static void release_features( struct feature** feat, int count )
@@ -1371,7 +1451,7 @@ static void compute_features( const ImagePyrData* imgPyrData, struct feature** f
     CvSeq* features;
 
     storage = cvCreateMemStorage( 0 );
-    features = scale_space_extrema( imgPyrData->dog_pyr, imgPyrData->octaves, imgPyrData->intervals,
+    features = scale_space_extrema( imgPyrData->scale_pyr, imgPyrData->octaves, imgPyrData->intervals,
                                     contr_thr, curv_thr, storage );
 
     calc_feature_scales( features, imgPyrData->sigma, imgPyrData->intervals );
@@ -1670,7 +1750,7 @@ void pk::SIFT::operator()(const cv::Mat& image, const cv::Mat& mask,
     IplImage img = fimg;
     struct feature* features;
 
-    ImagePyrData pyrImages( &img, commParams.nOctaves, commParams.nOctaveLayers, SIFT_SIGMA, SIFT_IMG_DBL, commParams.scaleType );
+    ImagePyrData pyrImages( fimg, commParams.nOctaves, commParams.nOctaveLayers, SIFT_SIGMA, SIFT_IMG_DBL );
 
     int feature_count = 0;
     compute_features( &pyrImages, &features, feature_count, detectorParams.threshold, (int)detectorParams.edgeThreshold );
@@ -1713,8 +1793,9 @@ static void release_features_data( CvSeq* featuresSeq )
 // Note: calc_feature_oris() duplicates the points with several dominant orientations.
 // So if keypoints was detected by Sift feature detector then some points will be
 // duplicated twice.
-static void recalculateAngles( std::vector<cv::KeyPoint>& keypoints, IplImage*** gauss_pyr,
-                        int nOctaves, int nOctaveLayers )
+static void recalculateAngles( std::vector<cv::KeyPoint>& keypoints, 
+                               const std::vector< std::vector<cv::Mat> >& gauss_pyr,
+                               int nOctaves, int nOctaveLayers )
 {
     CvMemStorage* storage = cvCreateMemStorage( 0 );
     CvSeq* featuresSeq = cvCreateSeq( 0, sizeof(CvSeq), sizeof(struct feature), storage );
@@ -1745,7 +1826,7 @@ static void recalculateAngles( std::vector<cv::KeyPoint>& keypoints, IplImage***
 // descriptors
 void pk::SIFT::operator()(const cv::Mat& image, const cv::Mat& mask,
                       std::vector<cv::KeyPoint>& keypoints,
-                     cv::Mat& descriptors,
+                      cv::Mat& descriptors,
                       bool useProvidedKeypoints) const
 {
     if( image.empty() || image.type() != CV_8UC1 )
@@ -1763,7 +1844,7 @@ void pk::SIFT::operator()(const cv::Mat& image, const cv::Mat& mask,
     }
 
     IplImage img = fimg;
-    ImagePyrData pyrImages( &img, commParams.nOctaves, commParams.nOctaveLayers, SIFT_SIGMA, SIFT_IMG_DBL, commParams.scaleType);
+    ImagePyrData pyrImages( fimg, commParams.nOctaves, commParams.nOctaveLayers, SIFT_SIGMA, SIFT_IMG_DBL);
 
     if( descriptorParams.recalculateAngles )
         recalculateAngles( keypoints, pyrImages.gauss_pyr, commParams.nOctaves, commParams.nOctaveLayers );
