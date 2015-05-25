@@ -102,6 +102,7 @@
 
 #include "sipht.hpp"
 #include <cstdlib>
+#include <limits>
 #include <opencv2/opencv.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
@@ -320,6 +321,50 @@ static IplImage* downsample( IplImage* img )
   return smaller;
 }
 
+/* 
+  Creates a transformed Gaussian Kernel
+  
+  
+  
+*/
+namespace pk
+{
+  void getWarpedKernel(cv::Mat& kernel, cv::Mat& transform, double ksize, const double& sigma, int type)
+  {
+    if (ksize < 0) ksize = cvRound(sigma*(type == CV_8U ? 3 : 4)*2 + 1)|1;
+    cv::Mat gauss = cv::getGaussianKernel(ksize, sigma, CV_64F );
+    gauss = gauss * gauss.t();
+    
+    std::vector<cv::Mat> corners;
+    corners.push_back((cv::Mat_<double>(3,1) << 0, 0, 1));
+    corners.push_back((cv::Mat_<double>(3,1) << ksize, 0, 1));
+    corners.push_back((cv::Mat_<double>(3,1) << 0, ksize, 1));
+    corners.push_back((cv::Mat_<double>(3,1) << ksize, ksize, 1)); 
+  
+    for (auto&& pt : corners)
+    {
+      pt = transform * pt;
+    }
+        
+    double max = std::numeric_limits<double>::max();    
+    double dims[4] {0,0,max,max};
+    for (auto pt : corners)
+    {
+      dims[0] = std::max(pt.at<double>(0,0), dims[0]);
+      dims[1] = std::max(pt.at<double>(1,0), dims[1]);
+      dims[2] = std::min(pt.at<double>(0,0), dims[2]);
+      dims[3] = std::min(pt.at<double>(1,0), dims[3]);
+    }
+
+    int rows = 2*(cvRound(dims[0] - dims[2])/2) + 1;
+    int cols = 2*(cvRound(dims[1] - dims[3])/2) + 1;  
+
+    cv::warpAffine(gauss, kernel, transform, cv::Size(rows,cols), cv::INTER_CUBIC);
+    kernel /= cv::sum(kernel)[0];
+    kernel.convertTo(kernel, type);
+
+}
+}
 /*
   Builds Gaussian scale space pyramid from an image
 
@@ -371,7 +416,18 @@ static void build_gauss_pyr(cv::Mat& base, std::vector< std::vector<cv::Mat> >& 
 
         /* blur the current octave's last image to create the next one */
       else
-      	cv::GaussianBlur(gauss_pyr[o][i-1], gauss_pyr[o][i], cv::Size(), sig[i]);
+      {
+//      	cv::GaussianBlur(gauss_pyr[o][i-1], gauss_pyr[o][i], cv::Size(), sig[i]);
+
+//      	cv::namedWindow("blur", CV_WINDOW_AUTOSIZE);
+//        cv::imshow("blur", gauss_pyr[o][i]);
+//        cv::waitKey(0);
+      	cv::Mat temp, kern, trans = cv::Mat::eye(2,3,CV_64F);
+      	pk::getWarpedKernel(kern, trans, -1, sig[i], gauss_pyr[o][i-1].type());
+      	cv::filter2D(gauss_pyr[o][i-1], gauss_pyr[o][i], -1, kern);
+
+      }
+     	
     }
 
 #if defined WIN32 || defined _WIN32 || defined WINCE
