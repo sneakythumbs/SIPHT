@@ -127,13 +127,13 @@ namespace pk
     	//! finds the keypoints using SIFT algorithm
     	void operator()(const cv::Mat& img, const cv::Mat& mask,
     	                std::vector<cv::KeyPoint>& keypoints,
-    	                cv::Mat& transform) const;
+    	                cv::Mat& transform = cv::Mat::eye(2,3,CV_64F)) const;
     	//! finds the keypoints and computes descriptors for them using SIFT algorithm.
     	//! Optionally it can compute descriptors for the user-provided keypoints
     	void operator()(const cv::Mat& img, const cv::Mat& mask,
     	                std::vector<cv::KeyPoint>& keypoints,
     	                cv::Mat& descriptors,
-    	                cv::Mat& transform,
+    	                cv::Mat& transform = cv::Mat::eye(2,3,CV_64F),
     	                bool useProvidedKeypoints=false) const;
 	
     	CommonParams getCommonParams () const;

@@ -1,0 +1,66 @@
+static inline float getOctaveSamplingPeriod( int o );
+static inline float pixval32f( IplImage* img, int r, int c );
+static IplImage* convert_to_gray32( IplImage* img );
+static void create_init_img(const cv::Mat& src, cv::Mat& dst, const bool img_dbl, const double sigma); 
+static IplImage* downsample( IplImage* img );
+static void build_gauss_pyr(cv::Mat& base, std::vector< std::vector<cv::Mat> >& gauss_pyr,
+						    int octvs, int intvls, const double sigma, cv::Mat transform);
+static void build_dog_pyr(const std::vector< std::vector<cv::Mat> >& gauss_pyr,
+													std::vector< std::vector<cv::Mat> >& dog_pyr,
+													int octvs, int intvls);
+static bool is_extremum(const std::vector< std::vector<cv::Mat> >& scale_pyr,
+												int octv, int intvl, int row, int col);
+static void deriv_3D(const std::vector< std::vector<cv::Mat> >& scale_pyr,
+										 cv::Mat& dI, int octv, int intvl, int row, int col);
+static void hessian_3D( const std::vector< std::vector<cv::Mat> >& scale_pyr,
+												cv::Mat& H, int octv, int intvl, int row, int col);
+static void interp_step( const std::vector< std::vector<cv::Mat> >& scale_pyr,
+                         int octv, int intvl, int row, int col,
+                         double& xi, double& xr, double& xc );
+static double interp_contr( const std::vector< std::vector<cv::Mat> >& scale_pyr,
+                         int octv, int intvl, int row, int col,
+                         double& xi, double& xr, double& xc );
+static struct feature* new_feature( void );
+static struct feature* interp_extremum(const std::vector< std::vector<cv::Mat> >& scale_pyr,
+                                       int octv, int intvl, int row, int col, int intvls,
+                                       double contr_thr);
+static bool is_too_edge_like(const cv::Mat& scale_img, int row, int col, int curv_thr);
+static CvSeq* scale_space_extrema(const std::vector< std::vector<cv::Mat> >& scale_pyr,
+                                 int octvs, int intvls, double contr_thr, int curv_thr,
+                                 CvMemStorage* storage);
+static void calc_feature_scales( CvSeq* features, double sigma, int intvls );
+static void adjust_for_img_dbl( CvSeq* features );
+static int calc_grad_mag_ori(const cv::Mat& img, int row, int col, double& mag,
+							 double& ori);
+static double* ori_hist(const cv::Mat& img, int r, int c, int n, int rad,
+                         double sigma );
+static void smooth_ori_hist( double* hist, int n );
+static double dominant_ori( double* hist, int n );
+static struct feature* clone_feature( struct feature* feat );
+static void add_good_ori_features( CvSeq* features, double* hist, int n,
+                                   double mag_thr, struct feature* feat );
+static void calc_feature_oris( CvSeq* features, 
+                          const std::vector< std::vector<cv::Mat> >& gauss_pyr );
+static void interp_hist_entry( double*** hist, double rbin, double cbin,
+                               double obin, double mag, int d, int n );
+static double*** descr_hist(const cv::Mat& img, int row, int col, double ori,
+                            double scl, int d, int n);
+
+static void normalize_descr( struct feature* feat );
+static void hist_to_descr( double*** hist, int d, int n, struct feature* feat );
+static int feature_cmp( void* feat1, void* feat2, void* /*param*/ );
+static void release_descr_hist( double**** hist, int d );
+static void release_pyr( IplImage**** pyr, int octvs, int n );
+static void compute_descriptors(CvSeq* features, 
+                                const std::vector< std::vector<cv::Mat> >& gauss_pyr,
+                                int d, int n );
+static void release_features( struct feature** feat, int count );
+static void compute_features( const ImagePyrData* imgPyrData, struct feature** feat, int& count,
+                       double contr_thr, int curv_thr );
+static inline cv::KeyPoint featureToKeyPoint( const feature& feat );
+static void fillFeatureData( feature& feat, const SiftParams& params );
+static inline void keyPointToFeature( const cv::KeyPoint& keypoint, feature& feat, const SiftParams& params );
+static void release_features_data( CvSeq* featuresSeq );
+static void recalculateAngles( std::vector<cv::KeyPoint>& keypoints, 
+                               const std::vector< std::vector<cv::Mat> >& gauss_pyr,
+                               int nOctaves, int nOctaveLayers );

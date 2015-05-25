@@ -41,8 +41,11 @@ int main(int argc, char** argv )
 
 	  cv::Mat cv_descriptors, pk_descriptors;
 
+    cv::Mat transform = cv::Mat::eye(2,3,CV_64F);
+    
     sift(img, mask, cv_points, cv_descriptors);
-    sipht(img, mask, pk_points, pk_descriptors);
+    sipht(img, mask, pk_points, pk_descriptors, transform);
+    
     long cv_found = 0, pk_found = 0, matching = 0;
     double tol = 1;
     for (auto j : pk_points)
