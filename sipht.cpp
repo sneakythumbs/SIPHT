@@ -337,7 +337,10 @@ static void create_init_img(const cv::Mat& src, cv::Mat& dst, const bool img_dbl
 //                           IPL_DEPTH_32F, 1 );
 //      cvResize( gray, dbl, CV_INTER_CUBIC );
 			cv::resize(grey, dbl, cv::Size(), 2, 2, CV_INTER_CUBIC);
-			cv::GaussianBlur(dbl, dbl, cv::Size(), sig_diff);
+			cv::Mat kern;
+      pk::getWarpedKernel(kern, transform, -1, sig_diff, dbl.type());
+      cv::filter2D(dbl, dbl, -1, kern);
+//			cv::GaussianBlur(dbl, dbl, cv::Size(), sig_diff);
 			dbl.convertTo(dst, CV_32FC1);
 //      cvSmooth( dbl, dbl, CV_GAUSSIAN, 0, 0, sig_diff, sig_diff );
 //      cvReleaseImage( &gray );
@@ -346,7 +349,7 @@ static void create_init_img(const cv::Mat& src, cv::Mat& dst, const bool img_dbl
   else
     {
       sig_diff = sqrt( sigma * sigma - SIFT_INIT_SIGMA * SIFT_INIT_SIGMA );
-      cv::Mat  kern;
+      cv::Mat kern;
       pk::getWarpedKernel(kern, transform, -1, sig_diff, grey.type());
       cv::filter2D(grey, grey, -1, kern);
 //      cv::GaussianBlur(grey, grey, cv::Size(), sig_diff);
@@ -427,10 +430,6 @@ static void build_gauss_pyr(cv::Mat& base, std::vector< std::vector<cv::Mat> >& 
       else
       {
 //      	cv::GaussianBlur(gauss_pyr[o][i-1], gauss_pyr[o][i], cv::Size(), sig[i]);
-
-//      	cv::namedWindow("blur", CV_WINDOW_AUTOSIZE);
-//        cv::imshow("blur", gauss_pyr[o][i]);
-//        cv::waitKey(0);
       	cv::Mat  kern;
       	pk::getWarpedKernel(kern, transform, -1, sig[i], gauss_pyr[o][i-1].type());
       	cv::filter2D(gauss_pyr[o][i-1], gauss_pyr[o][i], -1, kern);
@@ -469,9 +468,9 @@ static void build_dog_pyr(const std::vector< std::vector<cv::Mat> >& gauss_pyr,
     for(int i = 0; i < intvls + 2; ++i )
     {
     	dog_pyr[o][i] = gauss_pyr[o][i+1] - gauss_pyr[o][i];
-    cv::namedWindow("blur", CV_WINDOW_AUTOSIZE);
-    cv::imshow("blur", dog_pyr[o][i]);
-    cv::waitKey(0);
+//    cv::namedWindow("blur", CV_WINDOW_AUTOSIZE);
+//    cv::imshow("blur", dog_pyr[o][i]);
+//    cv::waitKey(0);
     }
 
   return;
