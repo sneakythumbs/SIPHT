@@ -22,7 +22,7 @@ int main(int argc, char** argv )
     double xSkew = tan ( atof(argv[2]) );
     double ySkew = tan ( atof(argv[3]) );
     
-    cv::Mat transform = (cv::Mat_<double>(2,3) << 1, xSkew, 0, ySkew, 1, 0);
+    cv::Mat transform = (cv::Mat_<double>(2,3) << sqrt(2), xSkew, 0, ySkew, 1/sqrt(2), 0);
     cv::Mat identity = cv::Mat::eye(2,3,CV_64F);
     warpAffine(img1, img2, transform, img1.size(), 
                    CV_INTER_LINEAR ,IPL_BORDER_CONSTANT);
@@ -61,9 +61,7 @@ int main(int argc, char** argv )
     for (auto i : img1_points)
     {
         ++orig;
-        cv::Point2f pt(i.pt.x, i.pt.y);
-        pt = transform * pt;
-        cv::Point3f original(pt.x, pt.y, i.angle);                
+        cv::Point3f original(i.pt.x, i.pt.y, i.angle);                
         for (auto j : img2_points)
         {
             cv::Point3f warped(j.pt.x, j.pt.y, j.angle);

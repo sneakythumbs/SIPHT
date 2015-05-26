@@ -275,7 +275,7 @@ namespace pk
     corners.push_back((cv::Mat_<double>(3,1) << 0, 0, 1));
     corners.push_back((cv::Mat_<double>(3,1) << ksize, 0, 1));
     corners.push_back((cv::Mat_<double>(3,1) << 0, ksize, 1));
-    corners.push_back((cv::Mat_<double>(3,1) << ksize, ksize, 1)); 
+    corners.push_back((cv::Mat_<double>(3,1) << ksize, ksize, 1));
   
     for (auto&& pt : corners)
     {
@@ -295,15 +295,11 @@ namespace pk
     int rows = 2*(static_cast<int>((dims[0] - dims[2])/2)) + 1;
     int cols = 2*(static_cast<int>((dims[1] - dims[3])/2)) + 1; 
     cv::Mat trans = transform.clone();
-    trans.at<double>(1,2) = cols/2 + 1 - (dims[1] - dims[3])/2;
-    trans.at<double>(0,2) = rows/2 + 1 - (dims[0] - dims[2])/2;
+    trans.at<double>(1,2) = cols/2 + 1 - (corners[3].at<double>(1,0) - corners[0].at<double>(1,0) + 1)/2;
+    trans.at<double>(0,2) = rows/2 + 1 - (dims[0] - dims[2] + 1)/2;
     cv::warpAffine(gauss, kernel, trans, cv::Size(rows,cols), cv::INTER_LINEAR);
     kernel /= cv::sum(kernel)[0];
     kernel.convertTo(kernel, type);
-//    cv::namedWindow("blur", CV_WINDOW_KEEPRATIO);
-//    std::cout << kernel.rows << std::endl << kernel.cols <<std::endl;
-//    cv::imshow("blur", kernel);
-//    cv::waitKey(0);
 
   }
 }
