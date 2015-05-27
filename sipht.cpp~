@@ -299,7 +299,7 @@ namespace pk
     trans.at<double>(0,2) = rows/2 + 1 - (corners[3].at<double>(0,0) - corners[0].at<double>(0,0) + 1)/2;
 //    trans.at<double>(1,2) = cols/2 + 1 - (dims[1] - dims[3] + 1)/2;
 //    trans.at<double>(0,2) = rows/2 + 1 - (dims[0] - dims[2] + 1)/2;
-    cv::warpAffine(gauss, kernel, trans, cv::Size(rows,cols), cv::INTER_CUBIC);
+    cv::warpAffine(gauss, kernel, trans, cv::Size(cols,rows), cv::INTER_LINEAR);
     kernel /= cv::sum(kernel)[0];
     kernel.convertTo(kernel, type);
 
