@@ -17,9 +17,9 @@ void removeDuplicates(std::vector<cv::KeyPoint>& keypoints, double tol);
 
 int main(int argc, char** argv )
 {
-    if ( argc != 7 )
+    if ( argc < 6 | argc > 7 )
     {
-        printf("usage: skewer <Image_Path> <X_Scale> <X_Shear> <Y_Shear> <Y_Scale> <Output_File>\n");
+        printf("usage: skewer <Image_Path> <Output_File> <X_Scale> <X_Shear> <Y_Shear> <Y_Scale>\n");
         return -1;
     }
 
@@ -27,10 +27,11 @@ int main(int argc, char** argv )
     img1 = cv::imread( argv[1], CV_LOAD_IMAGE_GRAYSCALE );
     img1_colour = cv::imread( argv[1], CV_LOAD_IMAGE_COLOR);
 
-    double xScale = atof(argv[2]);
-    double xShear = tan ( atof(argv[3]) );
-    double yShear = tan ( atof(argv[4]) );
-    double yScale = atof(argv[5]);
+    double xScale = atof(argv[3]);
+    double xShear = tan ( atof(argv[4]) );
+    double yShear = tan ( atof(argv[5]) );
+    double yScale = 1/xScale;
+    if (7 == argc) yScale = atof(argv[6]);
     
     cv::Mat transform = (cv::Mat_<double>(2,3) << xScale, xShear, 0, yShear, yScale, 0);
     cv::Mat identity = cv::Mat::eye(2,3,CV_64F);
@@ -40,9 +41,9 @@ int main(int argc, char** argv )
     
     getSize(img1, transform, trans, dims);
     warpAffine(img1, img2, trans, dims, 
-                   CV_INTER_LINEAR ,IPL_BORDER_CONSTANT);
+                   CV_INTER_CUBIC ,IPL_BORDER_CONSTANT);
     warpAffine(img1_colour, img2_colour, trans, dims,
-                                        CV_INTER_LINEAR ,IPL_BORDER_CONSTANT);
+                                        CV_INTER_CUBIC ,IPL_BORDER_CONSTANT);
 
 
 //    cv::Size dims = img2.size();
@@ -63,13 +64,20 @@ int main(int argc, char** argv )
 	SIFT::DescriptorParams descriptor;
 
 	SIFT sipht(common, detector, descriptor);
-
+//*
+  cv::SIFT::CommonParams com;
+  cv::SIFT::DetectorParams det;
+  cv::SIFT::DescriptorParams des;
+	cv::SIFT sift(com, det, des);
+//*/
 	cv::Mat img1_descriptors, img2_descriptors;
 
 //    sipht.setScaleType(atoi(argv[4]));
 
-    sipht(img1, mask, img1_points, img1_descriptors, identity);
+//    sipht(img1, mask, img1_points, img1_descriptors, identity);
     sipht(img2, mask, img2_points, img2_descriptors, transform);
+    sift(img1, mask, img1_points, img1_descriptors);
+//    sift(img2, mask, img2_points, img2_descriptors);
   
     removeDuplicates(img1_points, 0.5);
     removeDuplicates(img2_points, 0.5);
@@ -79,7 +87,7 @@ int main(int argc, char** argv )
     for (auto&& j : img2_points)  ++warp;
 
     std::ofstream file;
-    file.open(argv[6], std::ios::out | std::ios::app);
+    file.open(argv[2], std::ios::out | std::ios::app);
     file << "# " << argv[1] << "\t[" << xScale << "," << xShear
          << ";" << yShear << "," << yScale << "]\n"
          << "# unwarped points: " << orig << "\twarped points: " << warp
@@ -169,8 +177,8 @@ void getSize(cv::Mat& img, cv::Mat& inTrans, cv::Mat& outTrans, cv::Size& size)
       dims[3] = std::min(pt.at<double>(1,0), dims[3]);
     }
     
-    int cols = 2*(static_cast<int>((dims[0] - dims[2])/2)) + 1;
-    int rows = 2*(static_cast<int>((dims[1] - dims[3])/2)) + 1;
+    int cols = 2*(static_cast<int>((dims[0] - dims[2])/2));
+    int rows = 2*(static_cast<int>((dims[1] - dims[3])/2));
  
     outTrans = inTrans.clone();
     

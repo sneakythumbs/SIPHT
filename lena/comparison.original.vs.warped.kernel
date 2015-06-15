@@ -1,0 +1,42 @@
+set terminal jpeg size 700,525 enhanced font 'Verdana,12'
+set output 'comparison.png'
+set termoption dashed
+set terminal pngcairo dashed
+
+set style line 1 lw 2 lt 1 lc rgb "red"
+set style line 2 lw 2 lt 1 lc rgb "green"
+set style line 3 lw 2 lt 1 lc rgb "blue"
+set style line 4 lw 2 lt 1 lc rgb "orange"
+set style line 5 lw 2 lt 1 lc rgb "magenta"
+set style line 6 lw 2 lt 1 lc rgb "cyan"
+set style line 7 lw 2 lt 1 lc rgb "yellow"
+set style line 8 lw 2 lt 1 lc rgb "purple"
+set style line 9 lw 2 lt 1 lc rgb "#00FF00"
+set style line 10 lw 2 lt 1 lc rgb "#FF00FF"
+set style line 11 lw 2 lt 1 lc rgb "#696969"
+
+#set yrange [1e-5:]
+#set xrange [0:5000]
+
+set key right top
+set xlabel "Tolerance Distance [px]"
+set ylabel "Matching Fraction"
+#set logscale y
+set grid
+set title "     "
+
+
+plot "./lena0.0Y" u 1:3 t "No Shear" with l ls 1 lt 2,\
+     "./lena0.0Yorig" u 1:3 t "No Shear" with l ls 1,\
+     "./lena0.2Y" u 1:3 t "0.2 rad" with l ls 3 lt 2,\
+     "./lena0.2Yorig" u 1:3 t "0.2 rad" with l ls 3,\
+     "./lena0.4Y" u 1:3 t "0.4 rad" with l ls 5 lt 2,\
+     "./lena0.4Yorig" u 1:3 t "0.4 rad" with l ls 5,\
+     "./lena0.6Y" u 1:3 t "0.6 rad" with l ls 7 lt 2,\
+     "./lena0.6Yorig" u 1:3 t "0.6 rad" with l ls 7,\
+     "./lena0.8Y" u 1:3 t "0.8 rad" with l ls 9 lt 2,\
+     "./lena0.8Yorig" u 1:3 t "0.8 rad" with l ls 9,\
+     "./lena1.0Y" u 1:3 t "1.0 rad" with l ls 11 lt 2,\
+     "./lena1.0Yorig" u 1:3 t "1.0 rad" with l ls 11
+
+#reread 

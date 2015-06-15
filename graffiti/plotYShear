@@ -1,0 +1,45 @@
+set terminal jpeg size 700,525 enhanced font 'Verdana,12'
+set output 'YShear.png'
+set termoption dashed
+set terminal pngcairo dashed
+
+set style line 1 lw 2 lc rgb "red"
+set style line 2 lw 2 lc rgb "green"
+set style line 3 lw 2 lc rgb "blue"
+set style line 4 lw 2 lc rgb "orange"
+set style line 5 lw 2 lc rgb "magenta"
+set style line 6 lw 2 lc rgb "cyan"
+set style line 7 lw 2 lc rgb "yellow"
+set style line 8 lw 2 lc rgb "purple"
+set style line 9 lw 2 lc rgb "#00FF00"
+set style line 10 lw 2 lc rgb "#FF00FF"
+set style line 11 lw 2 lc rgb "#696969"
+
+#set yrange [1e-5:]
+#set xrange [0:5000]
+
+set key right top
+set xlabel "Tolerance Distance [px]"
+set ylabel "Matching Fraction"
+#set logscale y
+set grid
+set title "     "
+
+
+plot "./graffitiYShear0.0" u 1:3 t "No Shear" with l ls 1,\
+     "./graffitiYShear0.1" u 1:3 t "0.1 rad" with l ls 2,\
+     "./graffitiYShear0.2" u 1:3 t "0.2 rad" with l ls 3,\
+     "./graffitiYShear0.3" u 1:3 t "0.3 rad" with l ls 4,\
+     "./graffitiYShear0.4" u 1:3 t "0.4 rad" with l ls 5,\
+     "./graffitiYShear0.5" u 1:3 t "0.5 rad" with l ls 6,\
+     "./graffitiYShear0.6" u 1:3 t "0.6 rad" with l ls 7,\
+     "./graffitiYShear0.7" u 1:3 t "0.7 rad" with l ls 8,\
+     "./graffitiYShear0.8" u 1:3 t "0.8 rad" with l ls 9,\
+     "./graffitiYShear0.9" u 1:3 t "0.9 rad" with l ls 10,\
+     "./graffitiYShear1.0" u 1:3 t "1.0 rad" with l ls 11
+#"./lanczos-output" u 1:2 t "Lanczos Iteration" with l lt 0 lw 2 lc rgb "blue"
+#"./N128nu1" u 1:2 t "N=128 nu=1" with l lt 1 lc rgb "red",\
+#"./N128nu2" u 1:2 t "N=128 nu=2" with l lt 1 lc rgb "blue"
+
+#pause 2
+#reread 

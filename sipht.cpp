@@ -267,6 +267,32 @@ namespace pk
 {
   void getWarpedKernel(cv::Mat& kernel, cv::Mat& transform, double ksize, const double& sigma, int type)
   {
+
+  int kSize = 3;
+  cv::Mat covariance = cv::Mat::eye(2, 2, CV_64F) * (sigma * sigma);
+  cv::Mat A = transform(cv::Range(0,2), cv::Range(0,2)) * covariance * transform(cv::Range(0,2), cv::Range(0,2)).t();
+//  double normaliser = 1 / sqrt(cv::determinant(A.inv()) * 4 * M_PI * M_PI);
+
+  double lastSum = 0, sum = 1;
+  while (fabs(sum - lastSum) > 1e-3)
+  {
+    kernel = cv::Mat(kSize, kSize, CV_64F);
+    for (int row = -kSize/2; row <= kSize/2; ++row)
+      for (int col = -kSize/2; col <= kSize/2; ++col)
+      {
+        cv::Mat x = (cv::Mat_<double>(2,1) << row /*+ drow*/, col /*+ dcol*/);
+        cv::Mat exponent = -0.5 * x.t() * A.inv() * x;
+        kernel.at<double>(col + kSize/2, row + kSize/2) = exp(exponent.at<double>(0));
+      }  
+    lastSum = sum;
+    sum = cv::sum(kernel)[0];
+    kernel /= sum;
+    kSize += 2;
+  }
+  kernel.convertTo(kernel, type);
+}
+/*
+  {
     if (ksize < 0) ksize = cvRound(sigma*(type == CV_8U ? 3 : 4)*2 + 1)|1;
     cv::Mat gauss = cv::getGaussianKernel(ksize, sigma, CV_64F );
     gauss = gauss * gauss.t();
@@ -292,19 +318,21 @@ namespace pk
       dims[3] = std::min(pt.at<double>(1,0), dims[3]);
     }
 
-    int rows = 2*(static_cast<int>((dims[0] - dims[2])/2)) + 1;
-    int cols = 2*(static_cast<int>((dims[1] - dims[3])/2)) + 1; 
+    int cols = 2*(static_cast<int>((dims[0] - dims[2])/2)) + 1;
+    int rows = 2*(static_cast<int>((dims[1] - dims[3])/2)) + 1; 
     cv::Mat trans = transform.clone();
-    trans.at<double>(1,2) = cols/2 + 1 - (corners[3].at<double>(1,0) - corners[0].at<double>(1,0) + 1)/2;
-    trans.at<double>(0,2) = rows/2 + 1 - (corners[3].at<double>(0,0) - corners[0].at<double>(0,0) + 1)/2;
+    trans.at<double>(1,2) = rows/2 + 1 - (corners[3].at<double>(1,0) - corners[0].at<double>(1,0) + 1)/2;
+    trans.at<double>(0,2) = cols/2 + 1 - (corners[3].at<double>(0,0) - corners[0].at<double>(0,0) + 1)/2;
 //    trans.at<double>(1,2) = cols/2 + 1 - (dims[1] - dims[3] + 1)/2;
 //    trans.at<double>(0,2) = rows/2 + 1 - (dims[0] - dims[2] + 1)/2;
-    cv::warpAffine(gauss, kernel, trans, cv::Size(rows,cols), cv::INTER_LINEAR);
+    cv::warpAffine(gauss, kernel, trans, cv::Size(cols,rows), cv::INTER_LINEAR);
     kernel /= cv::sum(kernel)[0];
     kernel.convertTo(kernel, type);
 
   }
+*/  
 }
+
 
 /*
   Converts an image to 8-bit grayscale and Gaussian-smooths it.  The image is
@@ -432,6 +460,9 @@ static void build_gauss_pyr(cv::Mat& base, std::vector< std::vector<cv::Mat> >& 
 //      	cv::GaussianBlur(gauss_pyr[o][i-1], gauss_pyr[o][i], cv::Size(), sig[i]);
       	cv::Mat  kern;
       	pk::getWarpedKernel(kern, transform, -1, sig[i], gauss_pyr[o][i-1].type());
+//    cv::namedWindow("blur", CV_WINDOW_KEEPRATIO);
+//    cv::imshow("blur", kern);
+//    cv::waitKey(0);      	
       	cv::filter2D(gauss_pyr[o][i-1], gauss_pyr[o][i], -1, kern);
 
       }
