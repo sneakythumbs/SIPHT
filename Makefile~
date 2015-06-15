@@ -15,4 +15,4 @@ skewer: skewer.o sipht.o
 	${CXX} $^ -o $@ ${LDADD} #-Wl,--trace
 	
 test: test.o sipht.o
-	${CXX} $^ -o $@ ${LDADD}
+	${CXX} $^ -o $@	${LDADD}

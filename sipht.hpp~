@@ -127,19 +127,20 @@ namespace pk
     	//! finds the keypoints using SIFT algorithm
     	void operator()(const cv::Mat& img, const cv::Mat& mask,
     	                std::vector<cv::KeyPoint>& keypoints,
-    	                cv::Mat& transform = cv::Mat::eye(2,3,CV_64F)) const;
+    	                cv::Mat& transform) const;
     	//! finds the keypoints and computes descriptors for them using SIFT algorithm.
     	//! Optionally it can compute descriptors for the user-provided keypoints
     	void operator()(const cv::Mat& img, const cv::Mat& mask,
     	                std::vector<cv::KeyPoint>& keypoints,
     	                cv::Mat& descriptors,
-    	                cv::Mat& transform = cv::Mat::eye(2,3,CV_64F),
+    	                cv::Mat& transform,
     	                bool useProvidedKeypoints=false) const;
 	
     	CommonParams getCommonParams () const;
     	DetectorParams getDetectorParams () const;
     	DescriptorParams getDescriptorParams () const;
     	void setScaleType(int scaleType);
+    	std::vector< std::vector<cv::Mat> > pk::SIFT::getScalePyramid(cv::Mat& img, cv::Mat& transform);
 	
 	protected:
     	CommonParams commParams;

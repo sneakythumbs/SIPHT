@@ -280,19 +280,9 @@ namespace pk
     for (int row = -kSize/2; row <= kSize/2; ++row)
       for (int col = -kSize/2; col <= kSize/2; ++col)
       {
-        double quad = 0;
-//        int samples = 2;
-//        for (int i = 0; i < samples; ++i)
-//          for (int j = 0; j < samples; ++j)
-          {
-//            double step = 1.0 / (samples-1);
-//            double drow = i * step - 0.5;
-//            double dcol = j * step - 0.5;
-            cv::Mat x = (cv::Mat_<double>(2,1) << row /*+ drow*/, col /*+ dcol*/);
-            cv::Mat exponent = -0.5 * x.t() * A.inv() * x;
-            quad += exp(exponent.at<double>(0));
-           }
-        kernel.at<double>(col + kSize/2, row + kSize/2) = quad;// * (1.0/(samples*samples));// * normaliser;
+        cv::Mat x = (cv::Mat_<double>(2,1) << row /*+ drow*/, col /*+ dcol*/);
+        cv::Mat exponent = -0.5 * x.t() * A.inv() * x;
+        kernel.at<double>(col + kSize/2, row + kSize/2) = exp(exponent.at<double>(0));
       }  
     lastSum = sum;
     sum = cv::sum(kernel)[0];
@@ -470,11 +460,11 @@ static void build_gauss_pyr(cv::Mat& base, std::vector< std::vector<cv::Mat> >& 
 //      	cv::GaussianBlur(gauss_pyr[o][i-1], gauss_pyr[o][i], cv::Size(), sig[i]);
       	cv::Mat  kern;
       	pk::getWarpedKernel(kern, transform, -1, sig[i], gauss_pyr[o][i-1].type());
-//    cv::namedWindow("blur", CV_WINDOW_KEEPRATIO);
-//    cv::imshow("blur", kern);
-//    cv::waitKey(0);      	
+     	
       	cv::filter2D(gauss_pyr[o][i-1], gauss_pyr[o][i], -1, kern);
-
+//    cv::namedWindow("blur", CV_WINDOW_AUTOSIZE);
+//    cv::imshow("blur", gauss_pyr[o][i-1]);
+//    cv::waitKey(0); 
       }
      	
     }
@@ -1670,6 +1660,14 @@ pk::SIFT::DescriptorParams pk::SIFT::getDescriptorParams () const
 void pk::SIFT::setScaleType(int scaleType)
 {
 	commParams.scaleType =  scaleType;
+}
+
+std::vector< std::vector<cv::Mat> > pk::SIFT::getScalePyramid(cv::Mat& img, cv::Mat& transform)
+{
+  cv::Mat fimg;
+  img.convertTo( fimg, CV_32FC1 );
+  ImagePyrData pyrImages( fimg, commParams.nOctaves, commParams.nOctaveLayers, SIFT_SIGMA, SIFT_IMG_DBL, transform);
+  return pyrImages.scale_pyr;
 }
 
 struct SiftParams

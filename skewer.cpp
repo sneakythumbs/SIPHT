@@ -75,9 +75,9 @@ int main(int argc, char** argv )
 //    sipht.setScaleType(atoi(argv[4]));
 
 //    sipht(img1, mask, img1_points, img1_descriptors, identity);
-    sipht(img2, mask, img2_points, img2_descriptors, transform);
+//    sipht(img2, mask, img2_points, img2_descriptors, transform);
     sift(img1, mask, img1_points, img1_descriptors);
-//    sift(img2, mask, img2_points, img2_descriptors);
+    sift(img2, mask, img2_points, img2_descriptors);
   
     removeDuplicates(img1_points, 0.5);
     removeDuplicates(img2_points, 0.5);
@@ -87,7 +87,7 @@ int main(int argc, char** argv )
     for (auto&& j : img2_points)  ++warp;
 
     std::ofstream file;
-    file.open(argv[2], std::ios::out | std::ios::app);
+    file.open(argv[2], std::ios::out );
     file << "# " << argv[1] << "\t[" << xScale << "," << xShear
          << ";" << yShear << "," << yScale << "]\n"
          << "# unwarped points: " << orig << "\twarped points: " << warp
@@ -116,10 +116,20 @@ int main(int argc, char** argv )
       std::cout << "original method found:\t" << orig << std::endl;
       std::cout << "modified method found:\t" << warp << std::endl;
       std::cout << "number of matching points:\t" << count << std::endl;
-      file  << tol << "\t" << double(warp)/orig << "\t" << double(count)/warp << "\n";
+      file  << tol << "\t" << double(warp)/orig << "\t" << double(count)/orig << "\n";
       if (tol == 0.01) tol = 0;
     }
 
+    std::vector< std::vector<cv::Mat> > DoG = sipht.getScalePyramid(img2, transform);
+    cv::namedWindow("ScaleSpace", CV_WINDOW_AUTOSIZE );
+    for (auto octave = DoG.begin(); octave != DoG.end(); ++octave)
+      for (auto interval = octave->begin(); interval != octave->end(); ++interval) 
+      {
+        std::cout << "Total " << cv::sum(*interval)[0] << std::endl; 
+        cv::Mat lol = (*interval) * 1e1; 
+        cv::imshow("ScaleSpace", lol);   
+        cv::waitKey(0);
+      }
 ///*
     cv::Mat output;
 
@@ -155,7 +165,6 @@ int main(int argc, char** argv )
     
     cv::waitKey(0);
 */
-    
     return 0;
 }
 

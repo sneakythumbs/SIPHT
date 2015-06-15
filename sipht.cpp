@@ -460,11 +460,11 @@ static void build_gauss_pyr(cv::Mat& base, std::vector< std::vector<cv::Mat> >& 
 //      	cv::GaussianBlur(gauss_pyr[o][i-1], gauss_pyr[o][i], cv::Size(), sig[i]);
       	cv::Mat  kern;
       	pk::getWarpedKernel(kern, transform, -1, sig[i], gauss_pyr[o][i-1].type());
-//    cv::namedWindow("blur", CV_WINDOW_KEEPRATIO);
-//    cv::imshow("blur", kern);
-//    cv::waitKey(0);      	
+     	
       	cv::filter2D(gauss_pyr[o][i-1], gauss_pyr[o][i], -1, kern);
-
+//    cv::namedWindow("blur", CV_WINDOW_AUTOSIZE);
+//    cv::imshow("blur", gauss_pyr[o][i-1]);
+//    cv::waitKey(0); 
       }
      	
     }
@@ -1660,6 +1660,14 @@ pk::SIFT::DescriptorParams pk::SIFT::getDescriptorParams () const
 void pk::SIFT::setScaleType(int scaleType)
 {
 	commParams.scaleType =  scaleType;
+}
+
+std::vector< std::vector<cv::Mat> > pk::SIFT::getScalePyramid(cv::Mat& img, cv::Mat& transform)
+{
+  cv::Mat fimg;
+  img.convertTo( fimg, CV_64FC1 );
+  ImagePyrData pyrImages( fimg, commParams.nOctaves, commParams.nOctaveLayers, SIFT_SIGMA, SIFT_IMG_DBL, transform);
+  return pyrImages.scale_pyr;
 }
 
 struct SiftParams

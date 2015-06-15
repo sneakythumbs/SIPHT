@@ -140,6 +140,7 @@ namespace pk
     	DetectorParams getDetectorParams () const;
     	DescriptorParams getDescriptorParams () const;
     	void setScaleType(int scaleType);
+    	std::vector< std::vector<cv::Mat> > getScalePyramid(cv::Mat& img, cv::Mat& transform);
 	
 	protected:
     	CommonParams commParams;
