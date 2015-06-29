@@ -1,0 +1,2 @@
+g++ -c -std=c++11 -O2 -pipe -g -I '/home/kenny/Courses/Semester4/OpenCV/myOpenCV/include' pk.cpp
+g++ pk.o sipht.o skewer.o -o skewer -L/home/kenny/Courses/Semester4/OpenCV/myOpenCV/lib -lopencv_core -lopencv_highgui -lopencv_features2d -lopencv_imgproc -lopencv_flann #-Wl,--trace

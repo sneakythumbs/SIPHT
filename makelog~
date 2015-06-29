@@ -1,0 +1,1 @@
+g++ -c -std=c++11 -O2 -pipe -g -I '/home/kenny/Courses/Semester4/OpenCV/myOpenCV/include' pk.cpp

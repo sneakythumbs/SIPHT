@@ -11,7 +11,7 @@ LDADD=	-L${HOME}/Courses/Semester4/OpenCV/myOpenCV/lib \
 %.o: %.cpp
 	${CXX} -c ${CXXFLAGS} $<
 
-skewer: sipht.o skewer.o 
+skewer: pk.o sipht.o skewer.o 
 	${CXX} $^ -o $@ ${LDADD} #-Wl,--trace
 	
 test: test.o sipht.o

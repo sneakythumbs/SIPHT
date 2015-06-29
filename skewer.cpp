@@ -3,6 +3,7 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <cmath>
 #include "sipht.hpp"
+#include "pk.hpp"
 #ifdef __cplusplus
 #include <limits>
 #include <iostream>
@@ -120,15 +121,22 @@ int main(int argc, char** argv )
       if (tol == 0.01) tol = 0;
     }
 
+
     std::vector< std::vector<cv::Mat> > DoG = sipht.getScalePyramid(img2, transform);
     cv::namedWindow("ScaleSpace", CV_WINDOW_AUTOSIZE );
+    std::vector<cv::KeyPoint> localPoints;
+    
     for (auto octave = DoG.begin(); octave != DoG.end(); ++octave)
       for (auto interval = octave->begin(); interval != octave->end(); ++interval) 
       {
-        std::cout << "Total " << cv::sum(*interval)[0] << std::endl; 
-        cv::Mat lol = (*interval) * 1e1; 
-        cv::imshow("ScaleSpace", lol);   
-        cv::waitKey(0);
+//        std::cout << "Total " << cv::sum(*interval)[0] << std::endl; 
+//        cv::Mat lol = (*interval) * 1e1; 
+//        cv::imshow("ScaleSpace", lol);   
+//        cv::waitKey(0);
+          scale_space_extrema((*interval), common.nOctaveLayers, 
+                              detector.threshold, detector.edgeThreshold,
+                              localPoints);
+          std::cout << "number of local maxes: " << localPoints.size() << std::endl;
       }
 ///*
     cv::Mat output;
