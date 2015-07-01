@@ -8,11 +8,14 @@ LDADD=	-L${HOME}/Courses/Semester4/OpenCV/myOpenCV/lib \
 	-lopencv_core -lopencv_highgui -lopencv_features2d \
 	-lopencv_imgproc -lopencv_flann
 
-%.o: %.cpp
+%.o: %.cpp %.hpp
 	${CXX} -c ${CXXFLAGS} $<
 
 skewer: pk.o sipht.o skewer.o 
 	${CXX} $^ -o $@ ${LDADD} #-Wl,--trace
 	
 test: test.o sipht.o
+	${CXX} $^ -o $@	${LDADD}
+	
+harris: pk.o Harris_Laplace.o Harris_Test.o
 	${CXX} $^ -o $@	${LDADD}

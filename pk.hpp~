@@ -57,14 +57,18 @@
       float response;
   };
 
-bool pk::is_extremum(const cv::Mat& scale_img, int row, int col);
-void pk::deriv_2D(const cv::Mat& scale_img, cv::Mat& dI, int row, int col);
-void pk::hessian_2D( const cv::Mat& scale_img, cv::Mat& H, int row, int col);
-void pk::interp_step( const cv::Mat& scale_img, int row, int col, double& xr, double& xc );
-double pk::interp_contr( const cv::Mat& scale_img, int row, int col, double& xr, double& xc );
-struct feature* pk::new_feature( void );
-struct feature* pk::interp_extremum(const cv::Mat& scale_img, int octv, int row, int col, int intvls, double contr_thr);
-bool pk::is_too_edge_like(const cv::Mat& scale_img, int row, int col, int curv_thr);
-void pk::scale_space_extrema(const cv::Mat& scale_img, int intvls, double contr_thr, int curv_thr, std::vector<cv::KeyPoint>& keypoints);
+namespace pk
+{
+  bool is_extremum(const cv::Mat& scale_img, int row, int col);
+  void deriv_2D(const cv::Mat& scale_img, cv::Mat& dI, int row, int col);
+  void hessian_2D( const cv::Mat& scale_img, cv::Mat& H, int row, int col);
+  void interp_step( const cv::Mat& scale_img, int row, int col, double& xr, double& xc );
+  double interp_contr( const cv::Mat& scale_img, int row, int col, double& xr, double& xc );
+  struct feature* new_feature( void );
+  struct feature* interp_extremum(const cv::Mat& scale_img, int octv, int row, int col, int intvls, double contr_thr);
+  bool is_too_edge_like(const cv::Mat& scale_img, int row, int col, int curv_thr);
+  void scale_space_extrema(const cv::Mat& scale_img, int intvls, double contr_thr, int curv_thr, std::vector<cv::KeyPoint>& keypoints);
+  void harrisCorner(cv::Mat& src, cv::Mat& dst, double sigma, double trace);
+} /* End Namespce pk */
 
 #endif

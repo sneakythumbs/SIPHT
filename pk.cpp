@@ -319,4 +319,42 @@ namespace pk
     return;
   }
   
+  void harrisCorner(cv::Mat& src, cv::Mat& dst, double sigma, double k)
+  {
+    dst = cv::Mat(src.size(), CV_32FC1);
+    cv::Mat Lxx, Lyy, Lxy, temp;
+    int ksize = 1;
+    int dx = 1, dy = 0;
+    cv::Sobel(src, Lxx, -1, dx, dy, ksize);
+    dx = 0, dy = 1;
+    cv::Sobel(src, Lyy, -1, dx, dy, ksize);  
+    
+    temp = Lxx.mul(Lyy);
+    temp *= sigma*sigma;
+    cv::GaussianBlur(temp, Lxy, cv::Size(), sigma);
+    
+    temp = Lxx.mul(Lxx);
+    temp *= sigma*sigma;
+    cv::GaussianBlur(temp, Lxx, cv::Size(), sigma);
+  
+    temp = Lyy.mul(Lyy);
+    temp *= sigma*sigma;
+    cv::GaussianBlur(temp, Lyy, cv::Size(), sigma);
+
+    std::cout << k << std::endl;
+    std::cout << &k << std::endl;
+      
+    for (int row = 0; row < dst.rows; ++row)
+      for (int col = 0; col < dst.cols; ++col)
+      {
+        dst.at<float>(row, col) = Lxx.at<float>(row, col) * Lyy.at<float>(row, col)
+                                - Lxy.at<float>(row, col) * Lxy.at<float>(row, col)
+                           - k * (Lxx.at<float>(row, col) + Lyy.at<float>(row, col))
+                               * (Lxx.at<float>(row, col) + Lyy.at<float>(row, col));
+//        if (dst.at<float>(row, col) > 0)
+//          std::cout << "fuck yes\n";
+      }
+    
+    cv::normalize( dst, dst, 0.0, 1.0, 32, CV_32FC1, cv::Mat() );  
+  }
 } /* End Namespace pk */
