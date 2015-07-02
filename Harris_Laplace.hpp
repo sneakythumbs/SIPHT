@@ -47,6 +47,15 @@ namespace pk
 	  double getPixelLaplacian(const cv::Mat& img, int row, int col);
 	  void createBaseImage(const cv::Mat& src, cv::Mat& dst,
 					               const bool img_dbl, const double sigma);
+    void deriv_2D(const cv::Mat& scale_img, cv::Mat& dI, int row, int col);					               
+    void hessian_2D(const cv::Mat& scale_img, cv::Mat& H, int row, int col);					               
+    void interp_step(const cv::Mat& scale_img, int row, int col, double& xr, double& xc);		               
+		double interpContrast(const cv::Mat& scale_img, int row, int col, double& xr, double& xc);
+		int interpSpacialExtremum(const cv::Mat& scale_img, int oct, int row, int col, cv::Point& coords);
+		
+		int findScale(int row, int col, int oct, int inter, cv::KeyPoint& result);
+		int findMaxInterval(int row, int col, int oct);
+		int searchNeighbours(int row, int col, int oct, int inter, cv::KeyPoint& result);
 	  
 	  std::vector< std::vector<cv::Mat> > gaussPyramid;
 	  std::vector< std::vector<cv::Mat> > harrisPyramid;

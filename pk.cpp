@@ -341,8 +341,6 @@ namespace pk
     temp *= sigma*sigma;
     cv::GaussianBlur(temp, Lyy, cv::Size(), sigma);
 
-    std::cout << k << std::endl;
-    std::cout << &k << std::endl;
       
     for (int row = 0; row < dst.rows; ++row)
       for (int col = 0; col < dst.cols; ++col)
@@ -351,10 +349,6 @@ namespace pk
                                 - Lxy.at<float>(row, col) * Lxy.at<float>(row, col)
                            - k * (Lxx.at<float>(row, col) + Lyy.at<float>(row, col))
                                * (Lxx.at<float>(row, col) + Lyy.at<float>(row, col));
-//        if (dst.at<float>(row, col) > 0)
-//          std::cout << "fuck yes\n";
-      }
-    
-    cv::normalize( dst, dst, 0.0, 1.0, 32, CV_32FC1, cv::Mat() );  
+      } 
   }
 } /* End Namespace pk */

@@ -53,18 +53,21 @@ int main(int argc, char** argv )
     
     std::vector<cv::KeyPoint> img1_points, img2_points;
       
-    Harris_Laplace harry(img1, 0.04, 0.7);
+    Harris_Laplace harry(img1, 0.04, 5e-6, 4, 8);
     harry.detector(img1_points);
+    harry.detector(img1, img2_points);
     
-    cv::Mat output;
+    std::cout << img1_points.size() << " " << img2_points.size() << std::endl;
+    
+    cv::Mat output, snoutput;
 
     cv::drawKeypoints(img1, img1_points, output, cv::Scalar::all(-1), 4);
-//    cv::cornerHarris(img1, output, 3, 1, 0.04);
-//    cv::normalize( output, output, 0, 255, 32, CV_32FC1, cv::Mat() );
-//    cv::convertScaleAbs( output, output );
-//    std::cout << output << std::endl;
+    cv::drawKeypoints(img1, img2_points, snoutput, cv::Scalar::all(-1), 4);
+
     cv::namedWindow("Keypoints", CV_WINDOW_KEEPRATIO );
     cv::imshow("Keypoints", output);
+    cv::namedWindow("Points", CV_WINDOW_KEEPRATIO );
+    cv::imshow("Points", snoutput);
     cv::waitKey(0);
     
     return 0;

@@ -67,11 +67,18 @@ namespace pk
             {
               if( isSpacialExtremum(row, col, oct, inter) & isScaleExtremum(row, col, oct, inter) )
               {
-                //TODO interpolate keypoint
-                double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2;
-                double dcol = 0, drow = 0, scale = pow(2.0, oct);
-                cv::KeyPoint point((col + dcol) * scale * 0.5, (row + drow) * scale * 0.5, size);
-                keypoints.push_back(point);    
+                cv::Point coords;
+                int unfound = interpSpacialExtremum(harrisPyramid[oct][inter], oct, row, col, coords);
+                //TODO interpolate scale
+                if (!unfound)
+                {             
+                  double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2;
+                  cv::KeyPoint point(coords * 0.5, size);
+
+
+//                  int code = findScale(row, col, oct, inter, point);
+                  keypoints.push_back(point);
+                }  
               }        
             }
           }
@@ -91,13 +98,12 @@ namespace pk
             /* perform preliminary check on contrast */
             if(  harrisPyramid[oct][inter].at<float>(row, col)  > this->threshold )
             {
-            	std::cout << true << std::endl;
               if( isSpacialExtremum(row, col, oct, inter) & isScaleExtremum(row, col, oct, inter) )
               {
                 //TODO interpolate keypoint
-                double size = sigma[0] * pow(2.0, oct + (double)inter / intervals);
+                double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2;
                 double dcol = 0, drow = 0, scale = pow(2.0, oct);
-                cv::KeyPoint point((col + dcol) * scale, (row + drow) * scale, size);
+                cv::KeyPoint point((col + dcol) * scale *0.5, (row + drow) * scale * 0.5, size);
                 keypoints.push_back(point);    
               }   
             }     
@@ -191,22 +197,12 @@ namespace pk
       for (int inter = 0; inter < intervals + 2; ++inter )
       {  
         double size = sigma[0] * pow(2.0, oct + (double)inter / intervals);
-//        cv::Mat temp;
-//        cv::normalize( gaussPyramid[oct][inter], temp, 0, 255, 32, CV_32FC1, cv::Mat() );
-//        cv::convertScaleAbs( temp, temp );
-
-//        cv::cornerHarris(temp, harrisPyramid[oct][inter], 3, 1, k);
+//        cv::cornerHarris(gaussPyramid[oct][inter], harrisPyramid[oct][inter], cvRound(sigma[inter]), 1, k);
         harrisCorner(gaussPyramid[oct][inter], harrisPyramid[oct][inter], sigma[inter], k);
-//        harrisPyramid[oct][inter] *= -1;
-//        cv::normalize( harrisPyramid[oct][inter], harrisPyramid[oct][inter], 0.0, 255.0, 32, CV_32FC1, cv::Mat() );
-//        double max, min;
-//        cv::minMaxLoc(harrisPyramid[oct][inter], &min, &max);
-//        cv::convertScaleAbs( harrisPyramid[oct][inter], harrisPyramid[oct][inter] );
-//        std::cout << harrisPyramid[oct][inter] << std::endl;   
-//        std::cout << max << std::endl;     
-        cv::namedWindow("harry", CV_WINDOW_AUTOSIZE );
-        cv::imshow("harry", harrisPyramid[oct][inter]);
-        cv::waitKey(0);
+   
+//        cv::namedWindow("harry", CV_WINDOW_AUTOSIZE );
+//        cv::imshow("harry", harrisPyramid[oct][inter]);
+//        cv::waitKey(0);
       }
   }
 
@@ -237,13 +233,15 @@ namespace pk
 	  
 	bool Harris_Laplace::isScaleExtremum(int row, int col, int octave, int interval)
 	{
-	  double size = sigma[0] * pow(2.0, octave + (double)interval / intervals);
+	  //double size = sigma[0] * pow(2.0, octave + (double)interval / intervals);
+	  double size = sigma[interval];// * pow(2.0, octave);
 	  double val = getPixelLaplacian(harrisPyramid[octave][interval], row, col) * size * size;
-	  
+
 	  if (val > 0)
 	    for (int scale = -1; scale <= 1; ++ scale)
 	    {
-	      double size = sigma[0] * pow(2.0, octave + (double)(interval + scale) / intervals);
+//	      double size = sigma[0] * pow(2.0, octave + (double)(interval + scale) / intervals);
+	      double size = sigma[interval];
 	      double neighbour = getPixelLaplacian(harrisPyramid[octave][interval + scale], row, col) * size * size;
 	      if (val < neighbour)
 	        return false;
@@ -251,7 +249,8 @@ namespace pk
 	  else
 	    for (int scale = -1; scale <= 1; ++ scale)
 	    {
-	      double size = sigma[0] * pow(2.0, octave + (double)(interval + scale) / intervals);
+//	      double size = sigma[0] * pow(2.0, octave + (double)(interval + scale) / intervals);
+	      double size = sigma[interval];
 	      double neighbour = getPixelLaplacian(harrisPyramid[octave][interval + scale], row, col) * size * size;
 	      if (val > neighbour)
 	        return false;
@@ -268,4 +267,222 @@ namespace pk
 	           img.at<float>(row, col) * 4 );
 	}
 
+  /*
+    Computes the partial derivatives in x, and y of a pixel in one DoG
+    scale space level
+
+    @param scale_img one level of the DoG pyramid
+    @param row pixel's image row
+    @param col pixel's image column
+
+    @return Returns the vector of partial derivatives for pixel I
+      { dI/dx, dI/dy }^T as a CvMat&
+  */
+    void Harris_Laplace::deriv_2D(const cv::Mat& scale_img, cv::Mat& dI, int row, int col)
+    {
+      double dx, dy;
+    
+      dx = ( scale_img.at<float>(row,col+1) -
+             scale_img.at<float>(row,col-1) ) / 2.0;
+    	dy = ( scale_img.at<float>(row+1,col) -
+    	       scale_img.at<float>(row-1,col) ) / 2.0;
+    
+      dI = cv::Mat( 2, 1, CV_64FC1 );
+      dI.at<double>(0,0) = dx;
+      dI.at<double>(1,0) = dy;
+  
+      return;
+    }
+  
+  /*
+    Computes the 2D Hessian matrix for a pixel in an image.
+  
+    @param scale_img one level of the DoG pyramid
+    @param row pixel's image row
+    @param col pixel's image column
+  
+    @return Returns the Hessian matrix (below) for pixel I as a CvMat&
+  
+    / Ixx  Ixy \ <BR>
+    \ Ixy  Iyy /
+  */
+    void Harris_Laplace::hessian_2D( const cv::Mat& scale_img, cv::Mat& H, int row, int col)
+    {
+      double val, dxx, dyy, dxy;
+    
+      val = scale_img.at<float>(row,col);
+      dxx = ( scale_img.at<float>(row,col+1) +
+              scale_img.at<float>(row,col-1) - 2*val );
+      dyy = ( scale_img.at<float>(row+1,col) +
+              scale_img.at<float>(row-1,col) - 2*val );
+      dxy = ( scale_img.at<float>(row+1,col+1) -
+              scale_img.at<float>(row+1,col-1) -
+              scale_img.at<float>(row-1,col+1) + 
+              scale_img.at<float>(row-1,col-1) ) / 4.0;
+              
+      H = cv::Mat(2,2,CV_64FC1);
+      H.at<double>(0,0) = dxx;
+      H.at<double>(0,1) = dxy;
+      H.at<double>(1,0) = dxy;
+      H.at<double>(1,1) = dyy;
+      
+      return;
+  
+    }
+  
+  /*
+    Performs one step of extremum interpolation.  Based on Eqn. (3) in Lowe's
+    paper.
+  
+    @param scale_img one scale level of DoG
+    @param row row being interpolated
+    @param col column being interpolated
+    @param xr output as interpolated subpixel increment to row
+    @param xc output as interpolated subpixel increment to col
+  */
+    void Harris_Laplace::interp_step( const cv::Mat& scale_img, int row, int col, double& xr, double& xc )
+    {
+      cv::Mat dD, H, X;
+  
+      deriv_2D( scale_img, dD, row, col);
+      hessian_2D( scale_img, H, row, col);
+      cv::gemm( H.inv(), dD, -1, cv::Mat(), 0, X);
+      xr = X.at<double>(1);
+      xc = X.at<double>(0);
+    }
+  
+  /*
+    Calculates interpolated pixel contrast.  Based on Eqn. (3) in Lowe's
+    paper.
+  
+    @param scale_img one scale level of DoG
+    @param row pixel row
+    @param col pixel column
+    @param xr interpolated subpixel increment to row
+    @param xc interpolated subpixel increment to col
+  
+    @param Returns interpolated contrast.
+  */
+    double Harris_Laplace::interpContrast( const cv::Mat& scale_img, int row, int col, double& xr, double& xc )
+    {
+      cv::Mat dD, X, T;
+      X.push_back(xc);
+      X.push_back(xr);
+    
+      deriv_2D( scale_img, dD, row, col);
+      T = dD.t() * X;
+        return scale_img.at<float>(row,col) + T.at<double>(0) * 0.5;
+    }
+  /*
+  Interpolates a scale-space extremum's location to subpixel
+  precision to form an image feature.  Rejects features with low contrast.
+  Based on Section 4 of Lowe's paper.
+
+  @param scale_img one scale level of DoG
+  @param octv feature's octave of scale space
+  @param row feature's image row
+  @param col feature's image column
+  @param intvls total intervals per octave
+  @param contr_thr threshold on feature contrast
+
+  @return Returns the feature resulting from interpolation of the given
+    parameters or NULL if the given location could not be interpolated or
+    if contrast at the interpolated loation was too low.  If a feature is
+    returned, its scale, orientation, and descriptor are yet to be determined.
+  */
+  int Harris_Laplace::interpSpacialExtremum(const cv::Mat& scale_img, 
+                                            int oct, int row, int col, 
+                                            cv::Point& coords)
+  {
+    double xr=0, xc=0, contr;
+    int i = 0;
+    const int MAX_STEPS = 5;
+    while( i < MAX_STEPS )
+      {
+        interp_step( scale_img, row, col, xr, xc );
+        if( std::abs( xr ) < 0.5  &&  std::abs( xc ) < 0.5 )
+          break;
+
+        col += cvRound( xc );
+        row += cvRound( xr );
+  
+        if( col < border  ||
+            row < border  ||
+            col >= scale_img.cols - border  ||
+            row >= scale_img.rows - border )
+          {
+            return 1;
+          }
+  
+        i++;
+      }
+  
+    /* ensure convergence of interpolation */
+    if( i >= MAX_STEPS )
+      return 2;
+  
+    contr = interpContrast( scale_img, row, col, xr, xc );
+    if( std::abs( contr ) < this->threshold )
+      return 3;
+    coords.x = ( col + xc ) * pow( 2.0, oct );
+    coords.y = ( row + xr ) * pow( 2.0, oct );
+
+    return 0;
+  }  
+  
+  int Harris_Laplace::findScale(int row, int col, int oct, int inter, cv::KeyPoint& result)
+  {
+    if (!isSpacialExtremum(row, col, oct, inter)) return 1;
+    int interval = findMaxInterval(row, col, oct);
+    if (-1 == interval) return 2;
+    if (interval == inter)
+    {
+      cv::Point coords;
+      double size = sigma[0] * pow(2.0, oct + static_cast<double>(inter) / intervals) * 2;
+      interpSpacialExtremum(harrisPyramid[oct][inter], oct, row, col, coords);
+      result = cv::KeyPoint(coords * 0.5, size);
+      return 0;
+    }
+    int code = searchNeighbours(row, col, oct, inter, result);
+      if (0 == code) return 0;
+    return 1;
+  }
+ 
+  int Harris_Laplace::findMaxInterval(int row, int col, int oct)
+  {
+  	double lap0 = 0;
+	  for (int inter = 1; inter <= intervals; ++inter)
+	  {
+	    double size = sigma[0] * pow(2.0, oct + static_cast<double>(inter) / intervals) * 2;
+	    double lap = getPixelLaplacian(harrisPyramid[oct][inter], row, col) * size * size;
+	    if (std::abs(lap) < std::abs(lap0))
+	      return inter - 1;
+	    lap0 = lap;
+	  }
+	  return -1;
+ 
+  }
+    
+  int Harris_Laplace::searchNeighbours(int row, int col, int oct, int inter, cv::KeyPoint& result)
+  {
+ 
+    for (int y = -1; y <= 1; ++y )
+      for (int x = -1; x <= 1; ++x )
+      {
+        if (0 == y & 0 == x) continue;
+        if ((col + x) < border  ||
+            (row + y) < border  ||
+            (col + x) >= harrisPyramid[oct][inter].cols - border  ||
+            (row + y) >= harrisPyramid[oct][inter].rows - border )
+         {
+           return 1;
+         }
+        int code = findScale(row + y, col + x, oct, inter, result);
+        std::cout << row << " " << col << std::endl;
+        if (0 == code)  return 0;
+      }
+    return 2;
+  
+  } 
+  
 }				/* End Namespace pk */
