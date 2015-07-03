@@ -30,6 +30,7 @@ namespace pk
     int intervals;
     int border;
     std::vector<double> sigma;
+    int depth = 0;
     
     Harris_Laplace( float _k = 0.04, float thresh = 0.0, int oct = 4, int inter = 3, double _sigma = 1.6 );
     Harris_Laplace( const cv::Mat& img, float _k = 0.04, float thresh = 0.0, int oct = 4, int inter = 3, double _sigma = 1.6 );
@@ -53,7 +54,7 @@ namespace pk
 		double interpContrast(const cv::Mat& scale_img, int row, int col, double& xr, double& xc);
 		int interpSpacialExtremum(const cv::Mat& scale_img, int oct, int row, int col, cv::Point& coords);
 		
-		int findScale(int row, int col, int, oct, int inter, cv::KeyPoint& result);
+		int findScale(int row, int col, int oct, int inter, cv::KeyPoint& result);
 		int findMaxInterval(int row, int col, int oct);
 		int searchNeighbours(int row, int col, int oct, int inter, cv::KeyPoint& result);
 	  

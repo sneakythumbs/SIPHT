@@ -9,7 +9,7 @@ namespace pk
     threshold = thresh;
     octaves = oct;
     intervals = inter;
-    sigma.resize(intervals + 2);
+    sigma.resize(intervals + 3);
     border = 5;
     /*
       precompute Gaussian sigmas using the following formula:
@@ -17,7 +17,7 @@ namespace pk
     */
     sigma[0] = _sigma;
     double p = pow( 2.0, 1.0 / intervals );
-    for (int inter = 1; inter < intervals + 2; ++inter )
+    for (int inter = 1; inter < intervals + 3; ++inter )
     {
         double sig_prev = pow( p, inter - 1 ) * _sigma;
         double sig_total = sig_prev * p;
@@ -31,7 +31,7 @@ namespace pk
     threshold = thresh;
     octaves = oct;
     intervals = inter;
-    sigma.resize(intervals + 2);
+    sigma.resize(intervals + 3);
     border = 5;
     /*
       precompute Gaussian sigmas using the following formula:
@@ -39,7 +39,7 @@ namespace pk
     */
     sigma[0] = _sigma;
     double p = pow( 2.0, 1.0 / intervals );
-    for (int inter = 1; inter < intervals + 2; ++inter )
+    for (int inter = 1; inter < intervals + 3; ++inter )
     {
         double sig_prev = pow( p, inter - 1 ) * _sigma;
         double sig_total = sig_prev * p;
@@ -77,6 +77,7 @@ namespace pk
 
 
 //                  int code = findScale(row, col, oct, inter, point);
+//                  if (0 == code)
                   keypoints.push_back(point);
                 }  
               }        
@@ -164,10 +165,10 @@ namespace pk
   
     gaussPyramid.resize(octaves);
     for (int oct = 0; oct < octaves; ++oct )
-      gaussPyramid[oct].resize(intervals + 2);
+      gaussPyramid[oct].resize(intervals + 3);
 
     for (int oct = 0; oct < octaves; ++oct )
-      for (int inter = 0; inter < intervals + 2; ++inter )
+      for (int inter = 0; inter < intervals + 3; ++inter )
       {
   	    if ( oct == 0  &&  inter == 0 )
   	      createBaseImage(img, gaussPyramid[oct][inter], true, sigma[0]);
@@ -199,10 +200,13 @@ namespace pk
         double size = sigma[0] * pow(2.0, oct + (double)inter / intervals);
 //        cv::cornerHarris(gaussPyramid[oct][inter], harrisPyramid[oct][inter], cvRound(sigma[inter]), 1, k);
         harrisCorner(gaussPyramid[oct][inter], harrisPyramid[oct][inter], sigma[inter], k);
-   
-//        cv::namedWindow("harry", CV_WINDOW_AUTOSIZE );
-//        cv::imshow("harry", harrisPyramid[oct][inter]);
-//        cv::waitKey(0);
+/*        
+        cv::Mat img;
+        cv::normalize(harrisPyramid[oct][inter], img, 0, 1, 32);
+        cv::namedWindow("harry", CV_WINDOW_AUTOSIZE );
+        cv::imshow("harry", img);
+        cv::waitKey(0);
+//*/
       }
   }
 
@@ -233,25 +237,25 @@ namespace pk
 	  
 	bool Harris_Laplace::isScaleExtremum(int row, int col, int octave, int interval)
 	{
-	  //double size = sigma[0] * pow(2.0, octave + (double)interval / intervals);
-	  double size = sigma[interval];// * pow(2.0, octave);
-	  double val = getPixelLaplacian(harrisPyramid[octave][interval], row, col) * size * size;
-
+	  double size = sigma[0] * pow(2.0, octave + (double)interval / intervals);
+	  //double size = sigma[interval];// * pow(2.0, octave);
+	  double val = getPixelLaplacian(gaussPyramid[octave][interval + 1], row, col) * size * size;
+    if (std::abs(val) < 1e-1) return false;
 	  if (val > 0)
 	    for (int scale = -1; scale <= 1; ++ scale)
 	    {
-//	      double size = sigma[0] * pow(2.0, octave + (double)(interval + scale) / intervals);
-	      double size = sigma[interval];
-	      double neighbour = getPixelLaplacian(harrisPyramid[octave][interval + scale], row, col) * size * size;
+	      double size = sigma[0] * pow(2.0, octave + (double)(interval + scale) / intervals);
+//	      double size = sigma[interval];
+	      double neighbour = getPixelLaplacian(gaussPyramid[octave][interval + scale + 1], row, col) * size * size;
 	      if (val < neighbour)
 	        return false;
 	    }
 	  else
 	    for (int scale = -1; scale <= 1; ++ scale)
 	    {
-//	      double size = sigma[0] * pow(2.0, octave + (double)(interval + scale) / intervals);
-	      double size = sigma[interval];
-	      double neighbour = getPixelLaplacian(harrisPyramid[octave][interval + scale], row, col) * size * size;
+	      double size = sigma[0] * pow(2.0, octave + (double)(interval + scale) / intervals);
+//	      double size = sigma[interval];
+	      double neighbour = getPixelLaplacian(gaussPyramid[octave][interval + scale + 1], row, col) * size * size;
 	      if (val > neighbour)
 	        return false;
 	    }
@@ -422,7 +426,7 @@ namespace pk
       return 2;
   
     contr = interpContrast( scale_img, row, col, xr, xc );
-    if( std::abs( contr ) < this->threshold )
+    if( std::abs( contr ) < this->threshold / intervals )
       return 3;
     coords.x = ( col + xc ) * pow( 2.0, oct );
     coords.y = ( row + xr ) * pow( 2.0, oct );
@@ -440,12 +444,12 @@ namespace pk
       cv::Point coords;
       double size = sigma[0] * pow(2.0, oct + static_cast<double>(inter) / intervals) * 2;
       interpSpacialExtremum(harrisPyramid[oct][inter], oct, row, col, coords);
-      result = cv::KeyPoint(coords * 0.5, size);
+      result = cv::KeyPoint(coords * 0.5, size, -1, -1, oct, inter);
       return 0;
     }
     int code = searchNeighbours(row, col, oct, inter, result);
       if (0 == code) return 0;
-    return 1;
+    return 3;
   }
  
   int Harris_Laplace::findMaxInterval(int row, int col, int oct)
@@ -454,7 +458,7 @@ namespace pk
 	  for (int inter = 1; inter <= intervals; ++inter)
 	  {
 	    double size = sigma[0] * pow(2.0, oct + static_cast<double>(inter) / intervals) * 2;
-	    double lap = getPixelLaplacian(harrisPyramid[oct][inter], row, col) * size * size;
+	    double lap = getPixelLaplacian(gaussPyramid[oct][inter], row, col) * size * size;
 	    if (std::abs(lap) < std::abs(lap0))
 	      return inter - 1;
 	    lap0 = lap;
@@ -469,16 +473,21 @@ namespace pk
     for (int y = -1; y <= 1; ++y )
       for (int x = -1; x <= 1; ++x )
       {
-        if (0 == y & 0 == x) continue;
+//        if (0 == y & 0 == x) continue;
         if ((col + x) < border  ||
             (row + y) < border  ||
             (col + x) >= harrisPyramid[oct][inter].cols - border  ||
             (row + y) >= harrisPyramid[oct][inter].rows - border )
          {
-           return 1;
+           continue;
          }
+        ++recursion;
         int code = findScale(row + y, col + x, oct, inter, result);
-        std::cout << row << " " << col << std::endl;
+        --recursion;
+        if (recursion > 10) return 1;
+
+        std::cout << row << " " << col << " " << oct << " " << inter << std::endl;
+//        std::cout << code << std::endl;
         if (0 == code)  return 0;
       }
     return 2;
