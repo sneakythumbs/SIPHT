@@ -498,7 +498,9 @@ static void build_dog_pyr(const std::vector< std::vector<cv::Mat> >& gauss_pyr,
   for(int o = 0; o < octvs; ++o )
     for(int i = 0; i < intvls + 2; ++i )
     {
-    	dog_pyr[o][i] = gauss_pyr[o][i+1] - gauss_pyr[o][i];
+      double size = 1.6 * pow(2.0, o + (double)i / intvls);
+      Laplacian(gauss_pyr[o][i], dog_pyr[o][i], gauss_pyr[o][i].depth(), 1, size * size); // FIX THIS PLEASE
+//    	dog_pyr[o][i] = gauss_pyr[o][i+1] - gauss_pyr[o][i];
 //    cv::namedWindow("blur", CV_WINDOW_AUTOSIZE);
 //    cv::imshow("blur", dog_pyr[o][i]);
 //    cv::waitKey(0);
@@ -1665,7 +1667,7 @@ void pk::SIFT::setScaleType(int scaleType)
 std::vector< std::vector<cv::Mat> > pk::SIFT::getScalePyramid(cv::Mat& img, cv::Mat& transform)
 {
   cv::Mat fimg;
-  img.convertTo( fimg, CV_32FC1 );
+  img.convertTo( fimg, CV_64FC1 );
   ImagePyrData pyrImages( fimg, commParams.nOctaves, commParams.nOctaveLayers, SIFT_SIGMA, SIFT_IMG_DBL, transform);
   return pyrImages.scale_pyr;
 }

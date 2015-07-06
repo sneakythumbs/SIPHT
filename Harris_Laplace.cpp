@@ -9,7 +9,7 @@ namespace pk
     threshold = thresh;
     octaves = oct;
     intervals = inter;
-    sigma.resize(intervals + 3);
+    sigma.resize(intervals + 2);
     border = 5;
     /*
       precompute Gaussian sigmas using the following formula:
@@ -17,7 +17,7 @@ namespace pk
     */
     sigma[0] = _sigma;
     double p = pow( 2.0, 1.0 / intervals );
-    for (int inter = 1; inter < intervals + 3; ++inter )
+    for (int inter = 1; inter < intervals + 2; ++inter )
     {
         double sig_prev = pow( p, inter - 1 ) * _sigma;
         double sig_total = sig_prev * p;
@@ -31,7 +31,7 @@ namespace pk
     threshold = thresh;
     octaves = oct;
     intervals = inter;
-    sigma.resize(intervals + 3);
+    sigma.resize(intervals + 2);
     border = 5;
     /*
       precompute Gaussian sigmas using the following formula:
@@ -39,7 +39,7 @@ namespace pk
     */
     sigma[0] = _sigma;
     double p = pow( 2.0, 1.0 / intervals );
-    for (int inter = 1; inter < intervals + 3; ++inter )
+    for (int inter = 1; inter < intervals + 2; ++inter )
     {
         double sig_prev = pow( p, inter - 1 ) * _sigma;
         double sig_total = sig_prev * p;
@@ -72,7 +72,7 @@ namespace pk
                 //TODO interpolate scale
                 if (!unfound)
                 {             
-                  double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2;
+                  double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2 * 3;
                   cv::KeyPoint point(coords * 0.5, size);
 
 
@@ -102,7 +102,7 @@ namespace pk
               if( isSpacialExtremum(row, col, oct, inter) & isScaleExtremum(row, col, oct, inter) )
               {
                 //TODO interpolate keypoint
-                double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2;
+                double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2 * 3;
                 double dcol = 0, drow = 0, scale = pow(2.0, oct);
                 cv::KeyPoint point((col + dcol) * scale *0.5, (row + drow) * scale * 0.5, size);
                 keypoints.push_back(point);    

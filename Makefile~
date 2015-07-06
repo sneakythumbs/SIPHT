@@ -17,5 +17,8 @@ skewer: pk.o sipht.o skewer.o
 test: test.o sipht.o
 	${CXX} $^ -o $@	${LDADD}
 	
-harris: Harris_Laplace.o Harris_Test.o
+harris: pk.o Harris_Laplace.o Harris_Test.o
+	${CXX} $^ -o $@	${LDADD}
+	
+laplace: Laplace.o Laplace_Test.o
 	${CXX} $^ -o $@	${LDADD}

@@ -19,3 +19,6 @@ test: test.o sipht.o
 	
 harris: pk.o Harris_Laplace.o Harris_Test.o
 	${CXX} $^ -o $@	${LDADD}
+	
+laplace: sipht.o Laplace.o Laplace_Test.o
+	${CXX} $^ -o $@	${LDADD}
