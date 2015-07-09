@@ -69,6 +69,7 @@ namespace pk
   bool is_too_edge_like(const cv::Mat& scale_img, int row, int col, int curv_thr);
   void scale_space_extrema(const cv::Mat& scale_img, int intvls, double contr_thr, int curv_thr, std::vector<cv::KeyPoint>& keypoints);
   void harrisCorner(cv::Mat& src, cv::Mat& dst, double sigma, double k);
+  void hessianDeterminant(cv::Mat& src, cv::Mat& dst, double sigma);
 } /* End Namespce pk */
 
 #endif

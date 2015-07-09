@@ -33,7 +33,7 @@ int main(int argc, char** argv )
     std::vector<cv::KeyPoint> img1_points, img2_points;
     
     double edge = 10;
-    double thresh = 2;
+    double thresh = 0.04;
     int octaves = 5;
     int intervals = 3;
     
@@ -48,7 +48,7 @@ int main(int argc, char** argv )
 	  
 	  SIFT::CommonParams common(octaves, intervals);
 	  SIFT::DetectorParams detector(thresh, edge);
-	  SIFT::DescriptorParams descriptor(1, false, false);
+	  SIFT::DescriptorParams descriptor(1.0/3, false, false);
   	SIFT sipht(common, detector, descriptor);
     cv::Mat identity = cv::Mat::eye(2,3,CV_64F);
 

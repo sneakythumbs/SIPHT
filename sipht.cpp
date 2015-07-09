@@ -452,7 +452,7 @@ static void build_gauss_pyr(cv::Mat& base, std::vector< std::vector<cv::Mat> >& 
 
         /* base of new octave is halved image from end of previous octave */
       else if ( i == 0 )
-        cv::resize(gauss_pyr[o-1][intvls], gauss_pyr[o][i], cv::Size(), 0.5, 0.5, CV_INTER_NN);
+        cv::resize(gauss_pyr[o-1][intvls], gauss_pyr[o][i], cv::Size(), 0.5, 0.5, CV_INTER_AREA);
 
         /* blur the current octave's last image to create the next one */
       else
@@ -498,7 +498,7 @@ static void build_dog_pyr(const std::vector< std::vector<cv::Mat> >& gauss_pyr,
   for(int o = 0; o < octvs; ++o )
     for(int i = 0; i < intvls + 2; ++i )
     {
-      double size = 1.6 * pow(2.0, o + (double)i / intvls);
+//      double size = 1.6 * pow(2.0, o + (double)i / intvls);
 //      Laplacian(gauss_pyr[o][i], dog_pyr[o][i], gauss_pyr[o][i].depth(), 1, size * size); // FIX THIS PLEASE
     	dog_pyr[o][i] = gauss_pyr[o][i+1] - gauss_pyr[o][i];
 //    cv::namedWindow("blur", CV_WINDOW_AUTOSIZE);

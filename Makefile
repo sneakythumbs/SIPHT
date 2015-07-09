@@ -22,3 +22,9 @@ harris: pk.o Harris_Laplace.o Harris_Test.o
 	
 laplace: sipht.o Laplace.o Laplace_Test.o
 	${CXX} $^ -o $@	${LDADD}
+	
+hessian: pk.o Hessian_Laplace.o Hessian_Test.o
+	${CXX} $^ -o $@	${LDADD}
+	
+mser: pk.o MSER_Test.o
+	${CXX} $^ -o $@	${LDADD}

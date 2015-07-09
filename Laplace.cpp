@@ -64,13 +64,13 @@ namespace pk
           for (int col = border; col < laplacePyramid[oct][0].cols - border; ++col)
             /* perform preliminary check on contrast */
             if( std::abs( laplacePyramid[oct][inter].at<float>(row, col) )  > prelimThresh )
-              if( isLocalExtremum(row, col, oct, inter)  & !isTooEdgeLike(oct, inter, row, col) )
+              if( isLocalExtremum(row, col, oct, inter) )// & !isTooEdgeLike(oct, inter, row, col) )
               {
                 cv::KeyPoint point;
                 cv::Point3f coords;
                 int code = interpExtremum( oct, inter, row, col, point, coords);
                 if (0 == code)
-//                  if (!isTooEdgeLike(oct, coords.z, coords.y, coords.x))       
+                  if (!isTooEdgeLike(oct, coords.z, coords.y, coords.x))       
                     keypoints.push_back(point); 
               }        
     return;
@@ -185,7 +185,7 @@ namespace pk
     for (int oct = 0; oct < octaves; ++oct )
       for (int inter = 0; inter < intervals + 2; ++inter )
       {  
-        double size = sigma[0] * pow(2.0, oct + (double)inter / intervals);
+        double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 0.5;
         Laplacian(gaussPyramid[oct][inter], laplacePyramid[oct][inter], gaussPyramid[oct][inter].depth(), 1, size * size);
 /*        
         cv::Mat img;
@@ -482,7 +482,7 @@ namespace pk
     point.pt.x = ( col + xc ) * pow( 2.0, oct ) * 0.5;
     point.pt.y = ( row + xr ) * pow( 2.0, oct ) * 0.5;
     double size = sigma[0] * pow(2.0, oct + static_cast<double>(inter + xi) / intervals) * 0.5;
-    point.size = size * 4;
+    point.size = size * 4 * 3;
     
     coords.x = col;
     coords.y = row;
