@@ -70,6 +70,10 @@ namespace pk
   void scale_space_extrema(const cv::Mat& scale_img, int intvls, double contr_thr, int curv_thr, std::vector<cv::KeyPoint>& keypoints);
   void harrisCorner(cv::Mat& src, cv::Mat& dst, double sigma, double k);
   void hessianDeterminant(cv::Mat& src, cv::Mat& dst, double sigma);
+  void fitGaussians(std::vector< std::vector<cv::Point> >& msers, std::vector<cv::Mat>& mean,
+                    std::vector<cv::Mat>& covar, std::vector<double>& area);
+  double GaussianDerivative1D(double x, double sigma, int order);
+  void GaussDerivKernel1D(double sigma, int order, cv::Mat& kernel);
 } /* End Namespce pk */
 
 #endif

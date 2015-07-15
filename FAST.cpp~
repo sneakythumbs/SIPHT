@@ -1,9 +1,9 @@
-#include "Harris_Laplace.hpp"
+#include "FAST_Laplace.hpp"
 
 namespace pk
 {
 
-  Harris_Laplace::Harris_Laplace(float _k, float thresh, int oct, int inter, double _sigma)
+  FAST_Laplace::FAST_Laplace(float _k, float thresh, int oct, int inter, double _sigma)
   {
     k = _k;
     threshold = thresh;
@@ -25,7 +25,7 @@ namespace pk
     }
   }
   
-  Harris_Laplace::Harris_Laplace(const cv::Mat& img, float _k, float thresh, int oct, int inter, double _sigma)
+  FAST_Laplace::FAST_Laplace(const cv::Mat& img, float _k, float thresh, int oct, int inter, double _sigma)
   {
     k = _k;
     threshold = thresh;
@@ -49,66 +49,63 @@ namespace pk
     buildHarrisPyr();
   }
 
-  void Harris_Laplace::initialise(const cv::Mat& img)
+  void FAST_Laplace::initialise(const cv::Mat& img)
   {
     buildGaussPyr(img);
-    buildHarrisPyr();
+    buildFASTPyr();
   }
 
-  void Harris_Laplace::detector(std::vector<cv::KeyPoint>& keypoints)
+  void FAST_Laplace::detector(std::vector<cv::KeyPoint>& keypoints)
   {
     for (int oct = 0; oct < octaves; ++oct )
       for (int inter = 1; inter <= intervals; ++inter )
-        for (int row = border; row < harrisPyramid[oct][0].rows - border; ++row)
-          for (int col = border; col < harrisPyramid[oct][0].cols - border; ++col)
-          {
+        for (int row = border; row < fastPyramid[oct][0].rows - border; ++row)
+          for (int col = border; col < fastPyramid[oct][0].cols - border; ++col)
             /* perform preliminary check on contrast */
-            if(  harrisPyramid[oct][inter].at<float>(row, col)  > this->threshold )
-            {
+            if(  fastPyramid[oct][inter].at<float>(row, col)  > this->threshold )
               if( isSpacialExtremum(row, col, oct, inter) & isScaleExtremum(row, col, oct, inter) )
               {
                 cv::Point coords;
-                int unfound = interpSpacialExtremum(harrisPyramid[oct][inter], oct, row, col, coords);
+                int unfound = interpSpacialExtremum(fastPyramid[oct][inter], oct, row, col, coords);
                 //TODO interpolate scale
                 if (!unfound)
                 {             
                   double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2;
                   cv::KeyPoint point(coords * 0.5, size);
 
-
-//                  int code = findScale(row, col, oct, inter, point);
-//                  if (0 == code)
                   keypoints.push_back(point);
                 }  
               }        
-            }
-          }
     return;
 
   }
 
-  void Harris_Laplace::detector(cv::Mat& img, 
+  void FAST_Laplace::detector(cv::Mat& img, 
                                 std::vector<cv::KeyPoint>& keypoints)
   {
     buildGaussPyr(img);
-    buildHarrisPyr();
+    buildFASTPyr();
     for (int oct = 0; oct < octaves; ++oct )
       for (int inter = 1; inter <= intervals; ++inter )
-        for (int row = border; row < harrisPyramid[oct][0].rows - border; ++row)
-          for (int col = border; col < harrisPyramid[oct][0].cols - border; ++col)
+        for (int row = border; row < fastPyramid[oct][0].rows - border; ++row)
+          for (int col = border; col < fastPyramid[oct][0].cols - border; ++col)
             /* perform preliminary check on contrast */
-            if(  harrisPyramid[oct][inter].at<float>(row, col)  > this->threshold )
-            {
+            if(  fastPyramid[oct][inter].at<float>(row, col)  > this->threshold )
               if( isSpacialExtremum(row, col, oct, inter) & isScaleExtremum(row, col, oct, inter) )
               {
-                //TODO interpolate keypoint
-                double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2 * 3;
-                double dcol = 0, drow = 0, scale = pow(2.0, oct);
-                cv::KeyPoint point((col + dcol) * scale *0.5, (row + drow) * scale * 0.5, size);
-                keypoints.push_back(point);    
-              }   
-            }     
+                cv::Point coords;
+                int unfound = interpSpacialExtremum(fastPyramid[oct][inter], oct, row, col, coords);
+                //TODO interpolate scale
+                if (!unfound)
+                {             
+                  double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2;
+                  cv::KeyPoint point(coords * 0.5, size);
+
+                  keypoints.push_back(point);
+                }  
+              }        
     return;
+
   }
   
   /*
@@ -119,7 +116,7 @@ namespace pk
      @param img_dbl if true, image is doubled in size prior to smoothing
      @param sig total std of Gaussian smoothing
    */
-  void Harris_Laplace::createBaseImage(const cv::Mat& src, cv::Mat& dst,
+  void FAST_Laplace::createBaseImage(const cv::Mat& src, cv::Mat& dst,
 					                             const bool img_dbl, const double sig)
   {
     cv::Mat grey, dbl;
@@ -160,7 +157,7 @@ namespace pk
   @param img base image of the pyramid
 
 */
-  void Harris_Laplace::buildGaussPyr(const cv::Mat& img)
+  void FAST_Laplace::buildGaussPyr(const cv::Mat& img)
   {
   
     gaussPyramid.resize(octaves);
@@ -179,47 +176,43 @@ namespace pk
 
         /* blur the current octave's last image to create the next one */
         else
-         	cv::GaussianBlur(gaussPyramid[oct][inter-1], gaussPyramid[oct][inter], cv::Size(), sigma[inter]);
-//        cv::namedWindow("garry", CV_WINDOW_AUTOSIZE );
-//        cv::imshow("garry", gaussPyramid[oct][inter]);
-//        cv::waitKey(0);         	
+         	cv::GaussianBlur(gaussPyramid[oct][inter-1], gaussPyramid[oct][inter], cv::Size(), sigma[inter]);       	
         }
 
     return;
   }
   
-  void Harris_Laplace::buildHarrisPyr()
+  void FAST_Laplace::buildFASTPyr()
   {
-    harrisPyramid.resize(octaves);
+    fastPyramid.resize(octaves);
     for (int oct = 0; oct < octaves; ++oct )
-      harrisPyramid[oct].resize(intervals + 2);
+      fastPyramid[oct].resize(intervals + 2);
     
     for (int oct = 0; oct < octaves; ++oct )
       for (int inter = 0; inter < intervals + 2; ++inter )
       {  
         double size = sigma[0] * pow(2.0, oct + (double)inter / intervals);
-//        cv::cornerHarris(gaussPyramid[oct][inter], harrisPyramid[oct][inter], cvRound(sigma[inter]), 1, k);
-        harrisCorner(gaussPyramid[oct][inter], harrisPyramid[oct][inter], sigma[inter], k);
-/*        
+        harrisCorner(gaussPyramid[oct][inter], fastPyramid[oct][inter], sigma[inter], k);
+//*        
         cv::Mat img;
-        cv::normalize(harrisPyramid[oct][inter], img, 0, 1, 32);
-        cv::namedWindow("harry", CV_WINDOW_AUTOSIZE );
-        cv::imshow("harry", img);
+        cv::normalize(fastPyramid[oct][inter], img, 0, 1, 32);
+        cv::namedWindow("freddy", CV_WINDOW_AUTOSIZE );
+        cv::imshow("freddy", img);
         cv::waitKey(0);
 //*/
       }
   }
 
-	bool Harris_Laplace::isSpacialExtremum(int row, int col, int octave, int interval)
+	bool FAST_Laplace::isSpacialExtremum(int row, int col, int octave, int interval)
 	{
-	  double val = harrisPyramid[octave][interval].at<float>(row,col);
+	  double val = fastPyramid[octave][interval].at<float>(row,col);
 	  
 	  /* check for maximum */  
 	  if( val > 0 )
     {
       for (int y = -1; y <= 1; ++y )
         for (int x = -1; x <= 1; ++x )
-          if (val < harrisPyramid[octave][interval].at<float>(row + y, col + x))
+          if (val < fastPyramid[octave][interval].at<float>(row + y, col + x))
             return false;
     }
 
@@ -228,14 +221,14 @@ namespace pk
     {
       for (int y = -1; y <= 1; ++y )
         for (int x = -1; x <= 1; ++x )
-			  	if (val > harrisPyramid[octave][interval].at<float>(row + y, col + x))
+			  	if (val > fastPyramid[octave][interval].at<float>(row + y, col + x))
             return false;
     }
 
     return true;
 	}
 	  
-	bool Harris_Laplace::isScaleExtremum(int row, int col, int octave, int interval)
+	bool FAST_Laplace::isScaleExtremum(int row, int col, int octave, int interval)
 	{
 	  double size = sigma[0] * pow(2.0, octave + (double)interval / intervals);
 	  //double size = sigma[interval];// * pow(2.0, octave);
@@ -262,7 +255,7 @@ namespace pk
 	  return true;
 	}
 	
-	double Harris_Laplace::getPixelLaplacian(const cv::Mat& img, int row, int col)
+	double FAST_Laplace::getPixelLaplacian(const cv::Mat& img, int row, int col)
 	{
 	  return ( img.at<float>(row - 1, col) +
 	           img.at<float>(row, col - 1) +
@@ -282,7 +275,7 @@ namespace pk
     @return Returns the vector of partial derivatives for pixel I
       { dI/dx, dI/dy }^T as a CvMat&
   */
-    void Harris_Laplace::deriv_2D(const cv::Mat& scale_img, cv::Mat& dI, int row, int col)
+    void FAST_Laplace::deriv_2D(const cv::Mat& scale_img, cv::Mat& dI, int row, int col)
     {
       double dx, dy;
     
@@ -310,7 +303,7 @@ namespace pk
     / Ixx  Ixy \ <BR>
     \ Ixy  Iyy /
   */
-    void Harris_Laplace::hessian_2D( const cv::Mat& scale_img, cv::Mat& H, int row, int col)
+    void FAST_Laplace::hessian_2D( const cv::Mat& scale_img, cv::Mat& H, int row, int col)
     {
       double val, dxx, dyy, dxy;
     
@@ -344,7 +337,7 @@ namespace pk
     @param xr output as interpolated subpixel increment to row
     @param xc output as interpolated subpixel increment to col
   */
-    void Harris_Laplace::interp_step( const cv::Mat& scale_img, int row, int col, double& xr, double& xc )
+    void FAST_Laplace::interp_step( const cv::Mat& scale_img, int row, int col, double& xr, double& xc )
     {
       cv::Mat dD, H, X;
   
@@ -367,7 +360,7 @@ namespace pk
   
     @param Returns interpolated contrast.
   */
-    double Harris_Laplace::interpContrast( const cv::Mat& scale_img, int row, int col, double& xr, double& xc )
+    double FAST_Laplace::interpContrast( const cv::Mat& scale_img, int row, int col, double& xr, double& xc )
     {
       cv::Mat dD, X, T;
       X.push_back(xc);
@@ -394,7 +387,7 @@ namespace pk
     if contrast at the interpolated loation was too low.  If a feature is
     returned, its scale, orientation, and descriptor are yet to be determined.
   */
-  int Harris_Laplace::interpSpacialExtremum(const cv::Mat& scale_img, 
+  int FAST_Laplace::interpSpacialExtremum(const cv::Mat& scale_img, 
                                             int oct, int row, int col, 
                                             cv::Point& coords)
   {
@@ -433,65 +426,5 @@ namespace pk
 
     return 0;
   }  
-  
-  int Harris_Laplace::findScale(int row, int col, int oct, int inter, cv::KeyPoint& result)
-  {
-    if (!isSpacialExtremum(row, col, oct, inter)) return 1;
-    int interval = findMaxInterval(row, col, oct);
-    if (-1 == interval) return 2;
-    if (interval == inter)
-    {
-      cv::Point coords;
-      double size = sigma[0] * pow(2.0, oct + static_cast<double>(inter) / intervals) * 2;
-      interpSpacialExtremum(harrisPyramid[oct][inter], oct, row, col, coords);
-      result = cv::KeyPoint(coords * 0.5, size, -1, -1, oct, inter);
-      return 0;
-    }
-    int code = searchNeighbours(row, col, oct, inter, result);
-      if (0 == code) return 0;
-    return 3;
-  }
- 
-  int Harris_Laplace::findMaxInterval(int row, int col, int oct)
-  {
-  	double lap0 = 0;
-	  for (int inter = 1; inter <= intervals; ++inter)
-	  {
-	    double size = sigma[0] * pow(2.0, oct + static_cast<double>(inter) / intervals) * 2;
-	    double lap = getPixelLaplacian(gaussPyramid[oct][inter], row, col) * size * size;
-	    if (std::abs(lap) < std::abs(lap0))
-	      return inter - 1;
-	    lap0 = lap;
-	  }
-	  return -1;
- 
-  }
-    
-  int Harris_Laplace::searchNeighbours(int row, int col, int oct, int inter, cv::KeyPoint& result)
-  {
- 
-    for (int y = -1; y <= 1; ++y )
-      for (int x = -1; x <= 1; ++x )
-      {
-//        if (0 == y & 0 == x) continue;
-        if ((col + x) < border  ||
-            (row + y) < border  ||
-            (col + x) >= harrisPyramid[oct][inter].cols - border  ||
-            (row + y) >= harrisPyramid[oct][inter].rows - border )
-         {
-           continue;
-         }
-        ++recursion;
-        int code = findScale(row + y, col + x, oct, inter, result);
-        --recursion;
-        if (recursion > 10) return 1;
-
-        std::cout << row << " " << col << " " << oct << " " << inter << std::endl;
-//        std::cout << code << std::endl;
-        if (0 == code)  return 0;
-      }
-    return 2;
-  
-  } 
   
 }				/* End Namespace pk */

@@ -34,41 +34,26 @@ int main(int argc, char** argv )
     std::vector<cv::KeyPoint> img1_points, img2_points;
     
     
-    std::vector< std::vector<cv::Point> > msers;
+    std::vector< std::vector<cv::KeyPoint> > msers;
     cv::MSER misery;
+    misery.minDiversity = 0.4f;
+    misery.delta = 8;
+    misery.maxVariation = 0.1;
     misery(img1, msers, cv::Mat());
 
     cv::Mat output = img1, output2;
-//    int grey = 0;
+
     std::vector<cv::Mat> mean;
     std::vector<cv::Mat> covar;
-    for (auto& region : msers)
-    {
-      int x = 0, y = 0;
-      double length = region.size();
-      for (auto& pt : region)
-      {
-        x += pt.x;
-        y += pt.y;
+    std::vector<double> area;    
+    
+    fitGaussians(msers, mean, covar, area);
 
-      }
-      cv::Mat temp = (cv::Mat_<double>(2,1) << x/length, y/length);
-      mean.push_back(temp);
-      cv::circle(output, cv::Point(temp.at<double>(0,0), temp.at<double>(1,0)), 10, cv::Scalar::all(100));
-      
-      double varx = 0, vary = 0, varxy = 0;
-      for (auto& pt : region)
-      {
-        varx += (pt.x - temp.at<double>(0,0)) * (pt.x - temp.at<double>(0,0));
-        vary += (pt.y - temp.at<double>(1,0)) * (pt.y - temp.at<double>(1,0));
-        varxy += (pt.x - temp.at<double>(0,0)) * (pt.y - temp.at<double>(1,0));
-      }
-      temp = (cv::Mat_<double>(2,2) << varx/length, varxy/length, varxy/length, vary/length);
-      covar.push_back(temp);
-
-    }
-
-
+  for (int reg = 0; reg < msers.size(); ++reg)
+  {
+    std::cout << area[reg] << " " << reg << std::endl;
+    cv::circle(output, cv::Point(mean[reg].at<double>(0,0), mean[reg].at<double>(1,0)), sqrt(area[reg]/M_PI), cv::Scalar::all(100));
+  }
 
 //    cv::drawKeypoints(img1, img1_points, output, cv::Scalar::all(-1), 4);   
 

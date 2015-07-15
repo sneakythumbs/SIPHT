@@ -23,8 +23,17 @@ harris: pk.o Harris_Laplace.o Harris_Test.o
 laplace: sipht.o Laplace.o Laplace_Test.o
 	${CXX} $^ -o $@	${LDADD}
 	
-hessian: pk.o Hessian_Laplace.o Hessian_Test.o
+hessian: pk.o sipht.o Hessian_Laplace.o Hessian_Test.o
 	${CXX} $^ -o $@	${LDADD}
 	
 mser: pk.o MSER_Test.o
+	${CXX} $^ -o $@	${LDADD}
+
+orb: pk.o sipht.o Orb_Test.o
+	${CXX} $^ -o $@	${LDADD}
+	
+fast: pk.o FAST_Laplace.o FAST_Test.o
+	${CXX} $^ -o $@	${LDADD}
+	
+fastharris: pk.o FAST_Harris.o FAST_Harris_Test.o
 	${CXX} $^ -o $@	${LDADD}

@@ -4,7 +4,7 @@
 #include <cmath>
 #include "sipht.hpp"
 #include "pk.hpp"
-#include "Harris_Laplace.hpp"
+#include "FAST_Laplace.hpp"
 #ifdef __cplusplus
 #include <limits>
 #include <iostream>
@@ -32,9 +32,9 @@ int main(int argc, char** argv )
     
     std::vector<cv::KeyPoint> img1_points, img2_points;
       
-    Harris_Laplace harry(img1, 0.04, 5e-5, 4, 5);
-    harry.detector(img1_points);
-    harry.detector(img1, img2_points);
+    FAST_Laplace freddy(img1, 1e-5, 4, 5);
+    freddy.detector(img1_points);
+    freddy.detector(img1, img2_points);
     
     std::cout << img1_points.size() << " " << img2_points.size() << std::endl;
     

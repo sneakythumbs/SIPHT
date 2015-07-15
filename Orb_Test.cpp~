@@ -5,7 +5,6 @@
 
 #include "sipht.hpp"
 #include "pk.hpp"
-#include "Hessian_Laplace.hpp"
 
 #ifdef __cplusplus
 #include <limits>
@@ -34,9 +33,27 @@ int main(int argc, char** argv )
     
     std::vector<cv::KeyPoint> img1_points, img2_points;
     
-    cv::ORB orb();
-    orb(img1, cv::Mat(), img1_points, cv::noArray());
+    int nfeatures=500;
+    float scaleFactor=1.6f;
+    int nlevels=5;
+    int edgeThreshold=31;
+    int firstLevel=0;
+    int WTA_K=2;
+    int scoreType=0; //HARRIS_SCORE
+    int patchSize=31;
     
+    cv::ORB::CommonParams comm(scaleFactor, nlevels, edgeThreshold, firstLevel);
+//    cv::ORB orb(nfeatures, scaleFactor, nlevels, edgeThreshold, firstLevel, 
+//                WTA_K, scoreType, patchSize);
+    cv::ORB orb(500, comm);
+    orb(img1, mask, img1_points);
+    
+    for (auto& point : img1_points)
+    {
+      double sigma = std::pow(comm.scale_factor_, point.octave);
+      point.size = sigma * sigma * 5;
+    }
+
 
     cv::Mat output, output2;
 

@@ -72,7 +72,7 @@ namespace pk
                 //TODO interpolate scale
                 if (!unfound)
                 {             
-                  double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2 * 3;
+                  double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2;
                   cv::KeyPoint point(coords * 0.5, size);
 
 
@@ -96,18 +96,28 @@ namespace pk
       for (int inter = 1; inter <= intervals; ++inter )
         for (int row = border; row < harrisPyramid[oct][0].rows - border; ++row)
           for (int col = border; col < harrisPyramid[oct][0].cols - border; ++col)
+          {
             /* perform preliminary check on contrast */
             if(  harrisPyramid[oct][inter].at<float>(row, col)  > this->threshold )
             {
               if( isSpacialExtremum(row, col, oct, inter) & isScaleExtremum(row, col, oct, inter) )
               {
-                //TODO interpolate keypoint
-                double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2 * 3;
-                double dcol = 0, drow = 0, scale = pow(2.0, oct);
-                cv::KeyPoint point((col + dcol) * scale *0.5, (row + drow) * scale * 0.5, size);
-                keypoints.push_back(point);    
-              }   
-            }     
+                cv::Point coords;
+                int unfound = interpSpacialExtremum(harrisPyramid[oct][inter], oct, row, col, coords);
+                //TODO interpolate scale
+                if (!unfound)
+                {             
+                  double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2;
+                  cv::KeyPoint point(coords * 0.5, size);
+
+
+//                  int code = findScale(row, col, oct, inter, point);
+//                  if (0 == code)
+                  keypoints.push_back(point);
+                }  
+              }        
+            }
+          }
     return;
   }
   
