@@ -34,16 +34,21 @@ int main(int argc, char** argv )
     
     std::vector<cv::KeyPoint> img1_points, img2_points;
     
-    cv::ORB orb();
-    orb(img1, cv::Mat(), img1_points, cv::noArray());
+    double edge = 10;
+    double thresh = 2e-1;
+    int octaves = 5;
+    int intervals = 3;
+    
+    Hessian_Laplace hess(img1, edge, thresh, octaves, intervals);
+    hess.detector(img1_points);
     
 
     cv::Mat output, output2;
 
     cv::drawKeypoints(img1, img1_points, output, cv::Scalar::all(-1), 4);   
 
-    cv::namedWindow("korb", CV_WINDOW_KEEPRATIO );
-    cv::imshow("korb", output);
+    cv::namedWindow("Laplace", CV_WINDOW_KEEPRATIO );
+    cv::imshow("Laplace", output);
     cv::waitKey(0);
     
     return 0;

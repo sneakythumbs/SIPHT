@@ -1,0 +1,76 @@
+import os
+import sys
+import math
+
+rootdir = '/home/kenny/Courses/Semester4/SIPHT/repo/git/SIPHT/results/'
+
+#for root, dirs, files in os.walk("."):
+#    for file in files:
+#        print os.path.join(root, file)
+#        print '/'.join(root.split('/')[:-1])
+
+
+for dirs in os.listdir(rootdir):
+  path = os.path.join(rootdir, dirs)
+  if os.path.isfile(path):
+    continue
+  img = 0
+  data = []
+  
+  for subdirs in os.listdir(path):
+    filepath = os.path.join(path, subdirs)
+    if os.path.isfile(filepath):
+      continue
+    trans = 0
+    data.append([])
+#    print subdirs
+    
+    for files in os.listdir(filepath):
+      fullpath = os.path.join(filepath, files)
+      if os.path.isfile(fullpath):
+        data[img].append([])
+        method = files.split('-')[0]
+        transformation = files.split('[')[-1]
+#        print data
+        data[img][trans].append(method + '-[' + transformation)
+
+        
+        with open(fullpath, 'r') as infile:
+          for line in infile:
+            if line[0] != '#':
+              line = line.rstrip()
+              words = line.split('\t')
+              data[img][trans].append([words[0], words[2]])
+              
+
+      trans += 1 
+    img += 1
+  
+  images = len(data)
+  transforms = len(data[0])
+  points = len(data[0][0])
+  
+  mean = [ [ [0, 0] for i in range(points) ] for j in range(transforms) ]
+  var = [ [ [0, 0] for i in range(points) ] for j in range(transforms) ]  
+ 
+
+  
+  for i in range(0, images):
+    for j in range(0, transforms):
+      for k in range(1, points):
+        mean[j][k][0] += float(data[i][j][k][0]) / images
+        mean[j][k][1] += float(data[i][j][k][1]) / images
+        
+  for i in range(0, images):
+    for j in range(0, transforms):
+      for k in range(1, points):
+        var[j][k][0] += ( float(data[i][j][k][0]) - mean[j][k][0] )**2 / images
+        var[j][k][1] += ( float(data[i][j][k][1]) - mean[j][k][1] )**2 / images
+        
+  for j in range(0, transforms):
+    line = data[0][j][0]
+    with open(os.path.join(path, line + '-mean'), 'w') as outfile:
+      outfile.write(line + '\n')
+      for k in range(1, points):
+        line = str(mean[j][k][0]) + '\t' + str(mean[j][k][1]) + '\t' + str(math.sqrt(var[j][k][1])) + '\n'
+        outfile.write(line)

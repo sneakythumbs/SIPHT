@@ -9,7 +9,7 @@ namespace pk
     threshold = thresh;
     octaves = oct;
     intervals = inter;
-    sigma.resize(intervals + 2);
+    sigma.resize(intervals + 3);
     border = 5;
     /*
       precompute Gaussian sigmas using the following formula:
@@ -17,7 +17,7 @@ namespace pk
     */
     sigma[0] = _sigma;
     double p = pow( 2.0, 1.0 / intervals );
-    for (int inter = 1; inter < intervals + 2; ++inter )
+    for (int inter = 1; inter < intervals + 3; ++inter )
     {
         double sig_prev = pow( p, inter - 1 ) * _sigma;
         double sig_total = sig_prev * p;
@@ -31,7 +31,7 @@ namespace pk
     threshold = thresh;
     octaves = oct;
     intervals = inter;
-    sigma.resize(intervals + 2);
+    sigma.resize(intervals + 3);
     border = 5;
     /*
       precompute Gaussian sigmas using the following formula:
@@ -39,12 +39,13 @@ namespace pk
     */
     sigma[0] = _sigma;
     double p = pow( 2.0, 1.0 / intervals );
-    for (int inter = 1; inter < intervals + 2; ++inter )
+    for (int inter = 1; inter < intervals + 3; ++inter )
     {
         double sig_prev = pow( p, inter - 1 ) * _sigma;
         double sig_total = sig_prev * p;
         sigma[inter] = sqrt( sig_total * sig_total - sig_prev * sig_prev );
-    }    
+    }
+        
     buildGaussPyr(img);
     buildHarrisPyr();
   }
@@ -67,7 +68,7 @@ namespace pk
             {
               if( isSpacialExtremum(row, col, oct, inter) & isScaleExtremum(row, col, oct, inter) )
               {
-                cv::Point coords;
+                cv::Point2f coords;
                 int unfound = interpSpacialExtremum(harrisPyramid[oct][inter], oct, row, col, coords);
                 //TODO interpolate scale
                 if (!unfound)
@@ -102,7 +103,7 @@ namespace pk
             {
               if( isSpacialExtremum(row, col, oct, inter) & isScaleExtremum(row, col, oct, inter) )
               {
-                cv::Point coords;
+                cv::Point2f coords;
                 int unfound = interpSpacialExtremum(harrisPyramid[oct][inter], oct, row, col, coords);
                 //TODO interpolate scale
                 if (!unfound)
@@ -406,7 +407,7 @@ namespace pk
   */
   int Harris_Laplace::interpSpacialExtremum(const cv::Mat& scale_img, 
                                             int oct, int row, int col, 
-                                            cv::Point& coords)
+                                            cv::Point2f& coords)
   {
     double xr=0, xc=0, contr;
     int i = 0;
@@ -451,7 +452,7 @@ namespace pk
     if (-1 == interval) return 2;
     if (interval == inter)
     {
-      cv::Point coords;
+      cv::Point2f coords;
       double size = sigma[0] * pow(2.0, oct + static_cast<double>(inter) / intervals) * 2;
       interpSpacialExtremum(harrisPyramid[oct][inter], oct, row, col, coords);
       result = cv::KeyPoint(coords * 0.5, size, -1, -1, oct, inter);

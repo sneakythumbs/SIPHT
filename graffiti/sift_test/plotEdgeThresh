@@ -1,0 +1,41 @@
+set terminal jpeg size 700,525 enhanced font 'Verdana,12'
+set output 'SIPHTthresh.png'
+set termoption dashed
+set terminal pngcairo dashed
+
+set style line 1 lw 2 lc rgb "red"
+set style line 2 lw 2 lc rgb "green"
+set style line 3 lw 2 lc rgb "blue"
+set style line 4 lw 2 lc rgb "orange"
+set style line 5 lw 2 lc rgb "magenta"
+set style line 6 lw 2 lc rgb "cyan"
+set style line 7 lw 2 lc rgb "yellow"
+set style line 8 lw 2 lc rgb "purple"
+set style line 9 lw 2 lc rgb "#00FF00"
+set style line 10 lw 2 lc rgb "#FF00FF"
+set style line 11 lw 2 lc rgb "#696969"
+
+set yrange [0:1]
+#set xrange [0:5000]
+
+set key right top
+set xlabel "Tolerance Distance [px]"
+set ylabel "Matching Fraction"
+#set logscale y
+set grid
+set title "     "
+
+
+plot "./SIPHT-2" u 1:3 t "No Shear" with l ls 1,\
+     "./SIPHT-4" u 1:3 t "0.1 rad" with l ls 2,\
+     "./SIPHT-6" u 1:3 t "0.2 rad" with l ls 3,\
+     "./SIPHT-8" u 1:3 t "0.3 rad" with l ls 4,\
+     "./SIPHT-10" u 1:3 t "0.4 rad" with l ls 5,\
+     "./SIPHT-12" u 1:3 t "0.5 rad" with l ls 6,\
+     "./SIPHT-14" u 1:3 t "0.6 rad" with l ls 7,\
+     "./SIPHT-16" u 1:3 t "0.7 rad" with l ls 8,\
+     "./SIPHT-18" u 1:3 t "0.8 rad" with l ls 9,\
+     "./SIPHT-20" u 1:3 t "0.9 rad" with l ls 10
+     
+
+

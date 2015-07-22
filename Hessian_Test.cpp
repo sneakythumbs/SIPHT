@@ -35,7 +35,7 @@ int main(int argc, char** argv )
     std::vector<cv::KeyPoint> img1_points, img2_points;
     
     double edge = 10;
-    double thresh = 2e-2;
+    double thresh = 1e-1;
     int octaves = 5;
     int intervals = 3;
     

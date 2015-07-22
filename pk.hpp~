@@ -72,8 +72,8 @@ namespace pk
   void hessianDeterminant(cv::Mat& src, cv::Mat& dst, double sigma);
   void fitGaussians(std::vector< std::vector<cv::Point> >& msers, std::vector<cv::Mat>& mean,
                     std::vector<cv::Mat>& covar, std::vector<double>& area);
-  double 1DGaussianDerivative1D(double x, double sigma, int order);
-  void 1DGaussDerivKernel1D(double sigma, int order, cv::Mat& kernel);
+  double GaussianDerivative1D(double x, double sigma, int order);
+  void GaussDerivKernel1D(double sigma, int order, cv::Mat& kernel);
 } /* End Namespce pk */
 
 #endif

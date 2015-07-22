@@ -23,7 +23,12 @@ int main(int argc, char** argv )
     img1 = cv::imread( argv[1], CV_LOAD_IMAGE_GRAYSCALE );
     img1_colour = cv::imread( argv[1], CV_LOAD_IMAGE_COLOR);
    
-
+    cv::Mat transform = (cv::Mat_<double>(2,3) << 2, 0, 0, 0, 0.5, 0);
+      
+    cv::Size dims;
+    getSize(img1, transform, dims);
+    warpAffine(img1, img2, transform, dims, CV_INTER_CUBIC, IPL_BORDER_CONSTANT);
+    
     if ( !img1.data )
     {
         printf("No image data \n");
@@ -32,15 +37,15 @@ int main(int argc, char** argv )
     
     std::vector<cv::KeyPoint> img1_points, img2_points;
       
-    FAST_Harris freddy(img1, 1e-1, 1e-3, 0.04, 4, 5);
+    FAST_Harris freddy(img1, 20, 1e6, 0.04, 3, 2);
     freddy.detector(img1_points);
-    freddy.detector(img1, img2_points);
+    freddy.detector(img2, img2_points);
     
     std::cout << img1_points.size() << " " << img2_points.size() << std::endl;
     cv::Mat output, snoutput;
 
     cv::drawKeypoints(img1, img1_points, output, cv::Scalar::all(-1), 4);
-    cv::drawKeypoints(img1, img2_points, snoutput, cv::Scalar::all(-1), 4);
+    cv::drawKeypoints(img2, img2_points, snoutput, cv::Scalar::all(-1), 4);
 
     cv::namedWindow("Keypoints", CV_WINDOW_KEEPRATIO );
     cv::imshow("Keypoints", output);

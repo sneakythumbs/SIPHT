@@ -56,7 +56,7 @@ namespace pk
 		
 	  
 	  std::vector< std::vector<cv::Mat> > gaussPyramid;
-	  std::vector< std::vector<cv::Mat> > harrisPyramid;
+	  std::vector< std::vector<cv::Mat> > hessianPyramid;
 
 	};
 

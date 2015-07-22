@@ -74,6 +74,7 @@ namespace pk
                     std::vector<cv::Mat>& covar, std::vector<double>& area);
   double GaussianDerivative1D(double x, double sigma, int order);
   void GaussDerivKernel1D(double sigma, int order, cv::Mat& kernel);
+  void removeDuplicates(std::vector<cv::KeyPoint>& keypoints, double tol);
 } /* End Namespce pk */
 
 #endif

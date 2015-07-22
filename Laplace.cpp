@@ -82,19 +82,21 @@ namespace pk
   {
     buildGaussPyr(img);
     buildLaplacePyr();
+    double prelimThresh = 0.5 * this->threshold / intervals;
     for (int oct = 0; oct < octaves; ++oct )
       for (int inter = 1; inter <= intervals; ++inter )
         for (int row = border; row < laplacePyramid[oct][0].rows - border; ++row)
           for (int col = border; col < laplacePyramid[oct][0].cols - border; ++col)
             /* perform preliminary check on contrast */
-            if(  laplacePyramid[oct][inter].at<float>(row, col)  > this->threshold )
+            if( std::abs( laplacePyramid[oct][inter].at<float>(row, col) )  > prelimThresh )
               if( isLocalExtremum(row, col, oct, inter) & !isTooEdgeLike(oct, inter, row, col) )
               {
                 cv::KeyPoint point;
                 cv::Point3f coords;
                 int code = interpExtremum( oct, inter, row, col, point, coords);
                 if (0 == code)       
-                  keypoints.push_back(point); 
+                  if (!isTooEdgeLike(oct, coords.z, coords.y, coords.x))       
+                    keypoints.push_back(point); 
               }        
     return;
   }
@@ -186,7 +188,7 @@ namespace pk
       for (int inter = 0; inter < intervals + 2; ++inter )
       {  
         double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 0.5;
-        Laplacian(gaussPyramid[oct][inter], laplacePyramid[oct][inter], gaussPyramid[oct][inter].depth(), 1, size * size);
+        Laplacian(gaussPyramid[oct][inter], laplacePyramid[oct][inter], gaussPyramid[oct][inter].depth(), 3, size * size);
 /*        
         cv::Mat img;
         cv::normalize(laplacePyramid[oct][inter], img, 0, 1, 32);

@@ -356,7 +356,7 @@ namespace pk
   {
     dst = cv::Mat(src.size(), CV_32FC1);
     cv::Mat Lxx, Lyy, Lxy, temp;
-    int ksize = 1;
+    int ksize = 3;
     int dx = 2, dy = 0;
     cv::Sobel(src, Lxx, -1, dx, dy, ksize);
     dx = 0, dy = 2;
@@ -444,5 +444,22 @@ namespace pk
       kernel.at<float>(0,frag) = GaussianDerivative1D(frag -(size+1)/2, sigma, order);
     kernel /= cv::sum(kernel)[0];
   }
-                    
+          
+  void removeDuplicates(std::vector<cv::KeyPoint>& keypoints, double tol)
+  {
+    for (auto i = keypoints.begin(); i != keypoints.end(); ++i)
+      for (auto j = keypoints.begin(); j != keypoints.end(); ++j)
+      {
+        if (i == j) continue;
+  
+        if (sqrt(pow((*i).pt.x - (*j).pt.x, 2) + 
+                 pow((*i).pt.y - (*j).pt.y, 2)) < tol)
+        {
+          keypoints.erase(j);
+          --i;
+          break;
+        }
+    
+      }
+  }          
 } /* End Namespace pk */

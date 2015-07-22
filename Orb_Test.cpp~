@@ -24,6 +24,11 @@ int main(int argc, char** argv )
     img1 = cv::imread( argv[1], CV_LOAD_IMAGE_GRAYSCALE );
     img1_colour = cv::imread( argv[1], CV_LOAD_IMAGE_COLOR);
    
+    cv::Mat transform = (cv::Mat_<double>(2,3) << 2, 0, 0, 0, 0.5, 0);
+      
+    cv::Size dims;
+    getSize(img1, transform, dims);
+    warpAffine(img1, img2, transform, dims, CV_INTER_CUBIC, IPL_BORDER_CONSTANT);
 
     if ( !img1.data )
     {
@@ -34,7 +39,7 @@ int main(int argc, char** argv )
     std::vector<cv::KeyPoint> img1_points, img2_points;
     
     int nfeatures=500;
-    float scaleFactor=1.6f;
+    float scaleFactor=1.4f;
     int nlevels=5;
     int edgeThreshold=31;
     int firstLevel=0;
@@ -46,21 +51,44 @@ int main(int argc, char** argv )
 //    cv::ORB orb(nfeatures, scaleFactor, nlevels, edgeThreshold, firstLevel, 
 //                WTA_K, scoreType, patchSize);
     cv::ORB orb(500, comm);
-    orb(img1, mask, img1_points);
+    orb(img1, mask, img1_points);  
+    orb(img2, mask, img2_points);
     
     for (auto& point : img1_points)
     {
       double sigma = std::pow(comm.scale_factor_, point.octave);
+      point.size = sigma * sigma * 5;    
+    }    
+    for (auto& point : img2_points)
+    {
+      double sigma = std::pow(comm.scale_factor_, point.octave);
       point.size = sigma * sigma * 5;
+//      std::cout << "response: " << point.response * std::pow(comm.scale_factor_, point.octave) << std::endl;
     }
+/*/    
+    for ( auto it = img1_points.begin(); it < img1_points.end();)
+    {
+      if (it->response * std::pow(comm.scale_factor_, it->octave) < 5e-3)
+      {
+        it = img1_points.erase(it);      
+      }
+      else
+      {
+      ++it;
+      }
+    }
+//*/    
+
 
 
     cv::Mat output, output2;
 
     cv::drawKeypoints(img1, img1_points, output, cv::Scalar::all(-1), 4);   
-
+    cv::drawKeypoints(img2, img2_points, output2, cv::Scalar::all(-1), 4);  
     cv::namedWindow("korb", CV_WINDOW_KEEPRATIO );
     cv::imshow("korb", output);
+    cv::namedWindow("zorb", CV_WINDOW_KEEPRATIO );
+    cv::imshow("zorb", output2);    
     cv::waitKey(0);
     
     return 0;

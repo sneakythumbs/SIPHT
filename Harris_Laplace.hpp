@@ -52,7 +52,7 @@ namespace pk
     void hessian_2D(const cv::Mat& scale_img, cv::Mat& H, int row, int col);					               
     void interp_step(const cv::Mat& scale_img, int row, int col, double& xr, double& xc);		               
 		double interpContrast(const cv::Mat& scale_img, int row, int col, double& xr, double& xc);
-		int interpSpacialExtremum(const cv::Mat& scale_img, int oct, int row, int col, cv::Point& coords);
+		int interpSpacialExtremum(const cv::Mat& scale_img, int oct, int row, int col, cv::Point2f& coords);
 		
 		int findScale(int row, int col, int oct, int inter, cv::KeyPoint& result);
 		int findMaxInterval(int row, int col, int oct);

@@ -18,34 +18,13 @@ void getSize(cv::Mat& img, cv::Mat& trans, cv::Size& size);
 
 int main(int argc, char** argv )
 {
-    if ( argc < 6 | argc > 7 )
-    {
-        printf("usage: skewer <Image_Path> <Output_File> <X_Scale> <X_Shear> <Y_Shear> <Y_Scale>\n");
-        return -1;
-    }
 
     cv::Mat img1, img2, img1_colour, img2_colour, mask;
     img1 = cv::imread( argv[1], CV_LOAD_IMAGE_GRAYSCALE );
     img1_colour = cv::imread( argv[1], CV_LOAD_IMAGE_COLOR);
+   
 
-    double xScale = atof(argv[3]);
-    double xShear = tan ( atof(argv[4]) );
-    double yShear = tan ( atof(argv[5]) );
-    double yScale = 1/xScale;
-    if (7 == argc) yScale = atof(argv[6]);
-    
-    cv::Mat transform = (cv::Mat_<double>(2,3) << xScale, xShear, 0, yShear, yScale, 0);
-    cv::Mat identity = cv::Mat::eye(2,3,CV_64F);
-    
-    cv::Size dims;
-    
-    getSize(img1, transform, dims);
-    warpAffine(img1, img2, transform, dims, 
-                   CV_INTER_CUBIC ,IPL_BORDER_CONSTANT);
-    warpAffine(img1_colour, img2_colour, transform, dims,
-                                        CV_INTER_CUBIC ,IPL_BORDER_CONSTANT);
-
-    if ( !img1.data | !img2.data )
+    if ( !img1.data )
     {
         printf("No image data \n");
         return -1;
@@ -56,9 +35,9 @@ int main(int argc, char** argv )
     Harris_Laplace harry(img1, 0.04, 5e-5, 4, 5);
     harry.detector(img1_points);
     harry.detector(img1, img2_points);
-    
+
     std::cout << img1_points.size() << " " << img2_points.size() << std::endl;
-    
+    for (auto& point : img1_points) std::cout << point << std::endl;    
     cv::Mat output, snoutput;
 
     cv::drawKeypoints(img1, img1_points, output, cv::Scalar::all(-1), 4);
