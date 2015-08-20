@@ -45,6 +45,7 @@ int main(int argc, char** argv )
 
     cv::namedWindow("Keypoints", CV_WINDOW_KEEPRATIO );
     cv::imshow("Keypoints", output);
+//    cv::imwrite("Harris_Laplace_graffiti.png", output);
     cv::namedWindow("Points", CV_WINDOW_KEEPRATIO );
     cv::imshow("Points", snoutput);
     cv::waitKey(0);

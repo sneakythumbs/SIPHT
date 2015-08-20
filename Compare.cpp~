@@ -45,7 +45,7 @@ int main(int argc, char** argv )
     {
       check.changeMethod("Harris_Laplace");
   
-      Harris_Laplace harry(check.img1, 0.04, 5e-5, 5, 10);
+      Harris_Laplace harry(check.img1, 0.04, 5e-6, 5, 10);
       harry.detector(img1Points);
       harry.detector(check.img2, img2Points);
   
@@ -209,11 +209,11 @@ int main(int argc, char** argv )
       check.changeMethod("SIPHT");
   
       pk::SIFT::CommonParams common;
-	    pk::SIFT::DetectorParams detector;
+//	    pk::SIFT::DetectorParams detector(0.04, 10);
+      pk::SIFT::DetectorParams detector(0.04, 15);
 	    pk::SIFT::DescriptorParams descriptor;
 
-	    pk::SIFT sipht(common, detector, descriptor);
-
+	    pk::SIFT sipht(common, detector, descriptor, check.transform);
       cv::Mat eye = cv::Mat::eye(2, 3, CV_64FC1);
       sipht(check.img1, cv::Mat(), img1Points, eye);
 //  cv::Mat trans;

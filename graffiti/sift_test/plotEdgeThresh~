@@ -15,7 +15,7 @@ set style line 9 lw 2 lc rgb "#00FF00"
 set style line 10 lw 2 lc rgb "#FF00FF"
 set style line 11 lw 2 lc rgb "#696969"
 
-#set yrange [1e-5:]
+set yrange [0:1]
 #set xrange [0:5000]
 
 set key right top

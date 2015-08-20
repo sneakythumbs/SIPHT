@@ -202,14 +202,14 @@ namespace pk
     for (int oct = 0; oct < octaves; ++oct )
       for (int inter = 0; inter < intervals + 1; ++inter )
       {  
-        cv::Mat img8bit;
-        gaussPyramid[oct][inter].convertTo(img8bit, CV_8UC1);
-        img8bit *= 255;
+        cv::Mat img8bit, temp;
+        temp = gaussPyramid[oct][inter] * 255;
+        temp.convertTo(img8bit, CV_8UC1);
         double size = sigma[0] * pow(2.0, oct + (double)inter / intervals);
-        cv::FastFeatureDetector fd(this->fastThresh, true);
-        fd.detect(img8bit, fastPoints[oct][inter], cv::Mat());
+//        cv::FastFeatureDetector fd(this->fastThresh, true);
+//        fd.detect(img8bit, fastPoints[oct][inter], cv::Mat());
 
-//        cv::FAST(img8bit, fastPoints[oct][inter], this->fastThresh);
+        cv::FAST(img8bit, fastPoints[oct][inter], this->fastThresh);
 //        HarrisResponse harry(gaussPyramid[oct][inter]);
 //        harry(fastPoints[oct][inter]);
         for (auto& point : fastPoints[oct][inter])
@@ -241,8 +241,9 @@ namespace pk
     for (int oct = 0; oct < octaves; ++oct )
       for (int inter = 0; inter < intervals + 1; ++inter )
       {  
-        cv::Mat img8bit;
-        gaussPyramid[oct][inter].convertTo(img8bit, CV_8UC1);
+        cv::Mat img8bit, temp;
+        temp = gaussPyramid[oct][inter] * 255;
+        temp.convertTo(img8bit, CV_8UC1);
         double size = sigma[0] * pow(2.0, oct + (double)inter / intervals);
         cv::FAST(img8bit, fastPoints[oct][inter], this->fastThresh);
         for (auto& point : fastPoints[oct][inter])

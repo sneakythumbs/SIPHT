@@ -2,7 +2,6 @@ set terminal jpeg size 700,525 enhanced font 'Verdana,12'
 
 set termoption dashed
 set terminal pngcairo dashed
-set key left top
 
 set style line 1 lw 2 lc rgb "red"
 set style line 2 lw 2 lc rgb "green"
@@ -26,7 +25,9 @@ set ylabel "Matching Fraction"
 set grid
 
 set output 'Harris_Laplace-Shear.png'
-set title " Harris-Laplace - Y axis shear  "
+set title " Harris-Laplace - X axis shear  "
+set key left top
+
 
 plot "./Harris_Laplace/graffiti_thumb.png/Harris_Laplace-graffiti_thumb.png[1.00|0.20|0.00|1.00]" u 1:3 t "0.2 radians" with l ls 1,\
      "./Harris_Laplace/graffiti_thumb.png/Harris_Laplace-graffiti_thumb.png[1.00|0.40|0.00|1.00]" u 1:3 t "0.4 radians" with l ls 2,\
@@ -35,7 +36,9 @@ plot "./Harris_Laplace/graffiti_thumb.png/Harris_Laplace-graffiti_thumb.png[1.00
      "./Harris_Laplace/graffiti_thumb.png/Harris_Laplace-graffiti_thumb.png[1.00|1.00|0.00|1.00]" u 1:3 t "1.0 radians" with l ls 5
 
 set output 'Hessian_Laplace-Shear.png'
-set title " Hessian-Laplace - Y axis shear  "
+set title " Hessian-Laplace - X axis shear  "
+set key left top
+
 
 plot "./Hessian_Laplace/graffiti_thumb.png/Hessian_Laplace-graffiti_thumb.png[1.00|0.20|0.00|1.00]" u 1:3 t "0.2 radians" with l ls 1,\
      "./Hessian_Laplace/graffiti_thumb.png/Hessian_Laplace-graffiti_thumb.png[1.00|0.40|0.00|1.00]" u 1:3 t "0.4 radians" with l ls 2,\
@@ -44,7 +47,9 @@ plot "./Hessian_Laplace/graffiti_thumb.png/Hessian_Laplace-graffiti_thumb.png[1.
      "./Hessian_Laplace/graffiti_thumb.png/Hessian_Laplace-graffiti_thumb.png[1.00|1.00|0.00|1.00]" u 1:3 t "1.0 radians" with l ls 5
      
 set output 'Laplace-Shear.png'
-set title " Laplace - Y axis shear  "
+set title " Laplace - X axis shear  "
+set key left top
+
 
 plot "./Laplace/graffiti_thumb.png/Laplace-graffiti_thumb.png[1.00|0.20|0.00|1.00]" u 1:3 t "0.2 radians" with l ls 1,\
      "./Laplace/graffiti_thumb.png/Laplace-graffiti_thumb.png[1.00|0.40|0.00|1.00]" u 1:3 t "0.4 radians" with l ls 2,\
@@ -53,7 +58,9 @@ plot "./Laplace/graffiti_thumb.png/Laplace-graffiti_thumb.png[1.00|0.20|0.00|1.0
      "./Laplace/graffiti_thumb.png/Laplace-graffiti_thumb.png[1.00|1.00|0.00|1.00]" u 1:3 t "1.0 radians" with l ls 5
      
 set output 'MSER-Shear.png'
-set title " MSER - Y axis shear  "
+set title " MSER - X axis shear  "
+set key left top
+
 
 plot "./MSER/graffiti_thumb.png/MSER-graffiti_thumb.png[1.00|0.20|0.00|1.00]" u 1:3 t "0.2 radians" with l ls 1,\
      "./MSER/graffiti_thumb.png/MSER-graffiti_thumb.png[1.00|0.40|0.00|1.00]" u 1:3 t "0.4 radians" with l ls 2,\
@@ -62,7 +69,9 @@ plot "./MSER/graffiti_thumb.png/MSER-graffiti_thumb.png[1.00|0.20|0.00|1.00]" u 
      "./MSER/graffiti_thumb.png/MSER-graffiti_thumb.png[1.00|1.00|0.00|1.00]" u 1:3 t "1.0 radians" with l ls 5
      
 set output 'ORB-Shear.png'
-set title " ORB - Y axis shear  "
+set title " ORB - X axis shear  "
+set key left top
+
 
 plot "./ORB/graffiti_thumb.png/ORB-graffiti_thumb.png[1.00|0.20|0.00|1.00]" u 1:3 t "0.2 radians" with l ls 1,\
      "./ORB/graffiti_thumb.png/ORB-graffiti_thumb.png[1.00|0.40|0.00|1.00]" u 1:3 t "0.4 radians" with l ls 2,\
@@ -71,7 +80,9 @@ plot "./ORB/graffiti_thumb.png/ORB-graffiti_thumb.png[1.00|0.20|0.00|1.00]" u 1:
      "./ORB/graffiti_thumb.png/ORB-graffiti_thumb.png[1.00|1.00|0.00|1.00]" u 1:3 t "1.0 radians" with l ls 5
      
 set output 'SIFT-Shear.png'
-set title " SIFT - Y axis shear  "
+set title " SIFT - X axis shear  "
+set key left top
+
 
 plot "./SIFT/graffiti_thumb.png/SIFT-graffiti_thumb.png[1.00|0.20|0.00|1.00]" u 1:3 t "0.2 radians" with l ls 1,\
      "./SIFT/graffiti_thumb.png/SIFT-graffiti_thumb.png[1.00|0.40|0.00|1.00]" u 1:3 t "0.4 radians" with l ls 2,\
@@ -80,7 +91,9 @@ plot "./SIFT/graffiti_thumb.png/SIFT-graffiti_thumb.png[1.00|0.20|0.00|1.00]" u 
      "./SIFT/graffiti_thumb.png/SIFT-graffiti_thumb.png[1.00|1.00|0.00|1.00]" u 1:3 t "1.0 radians" with l ls 5
      
 set output 'SIPHT-Shear.png'
-set title " SIPHT - Y axis shear  "
+set title " SIPHT - X axis shear  "
+set key left top
+
 
 plot "./SIPHT/graffiti_thumb.png/SIPHT-graffiti_thumb.png[1.00|0.20|0.00|1.00]" u 1:3 t "0.2 radians" with l ls 1,\
      "./SIPHT/graffiti_thumb.png/SIPHT-graffiti_thumb.png[1.00|0.40|0.00|1.00]" u 1:3 t "0.4 radians" with l ls 2,\

@@ -33,7 +33,7 @@ int main(int argc, char** argv )
     std::vector<cv::KeyPoint> img1_points, img2_points;
     
     double edge = 10;
-    double thresh = 0.04;
+    double thresh = 5e0;
     int octaves = 5;
     int intervals = 3;
     
@@ -63,7 +63,8 @@ int main(int argc, char** argv )
 
     cv::namedWindow("Laplace", CV_WINDOW_KEEPRATIO );
     cv::imshow("Laplace", output);
-    cv::namedWindow("sift", CV_WINDOW_KEEPRATIO );
+    cv::imwrite("Laplace_graffiti.png", output);
+//    cv::namedWindow("sift", CV_WINDOW_KEEPRATIO );
     cv::imshow("sift", output2);
     cv::waitKey(0);
     

@@ -286,51 +286,47 @@ namespace pk
       }  
     lastSum = sum;
     sum = cv::sum(kernel)[0];
-    kernel /= sum;
     kSize += 2;
   }
+  kernel /= sum;
   kernel.convertTo(kernel, type);
 }
-/*
+
+
+  void getWarpedHessian(cv::Mat& DXXkernel, cv::Mat& DYYkernel, cv::Mat& DXYkernel, const cv::Mat& transform, const double& sigma, int ksize, int type)
   {
-    if (ksize < 0) ksize = cvRound(sigma*(type == CV_8U ? 3 : 4)*2 + 1)|1;
-    cv::Mat gauss = cv::getGaussianKernel(ksize, sigma, CV_64F );
-    gauss = gauss * gauss.t();
-    
-    std::vector<cv::Mat> corners;
-    corners.push_back((cv::Mat_<double>(3,1) << 0, 0, 1));
-    corners.push_back((cv::Mat_<double>(3,1) << ksize, 0, 1));
-    corners.push_back((cv::Mat_<double>(3,1) << 0, ksize, 1));
-    corners.push_back((cv::Mat_<double>(3,1) << ksize, ksize, 1));
-  
-    for (auto&& pt : corners)
-    {
-      pt = transform * pt;
-    }
-        
-    double max = std::numeric_limits<double>::max();    
-    double dims[4] {0,0,max,max};
-    for (auto pt : corners)
-    {
-      dims[0] = std::max(pt.at<double>(0,0), dims[0]);
-      dims[1] = std::max(pt.at<double>(1,0), dims[1]);
-      dims[2] = std::min(pt.at<double>(0,0), dims[2]);
-      dims[3] = std::min(pt.at<double>(1,0), dims[3]);
-    }
+    if( 0 == ksize) ksize = 3;
+    if(-1 == ksize) ksize = 2*cvRound(sigma) + 1;
+    CV_Assert(ksize % 2);
+    cv::Mat covariance = cv::Mat::eye(2, 2, CV_64F) * (sigma * sigma);
+    cv::Mat A = transform(cv::Range(0,2), cv::Range(0,2)) * covariance * transform(cv::Range(0,2), cv::Range(0,2)).t();
+    cv::Mat Ainv = A.inv();
+    double normaliser = 1 / sqrt(cv::determinant(A.inv()) * 4 * M_PI * M_PI);
+    cv::Mat hessian = cv::Mat(2, 2, CV_64F);
+    DXXkernel = cv::Mat(ksize, ksize, CV_64F);
+    DYYkernel = cv::Mat(ksize, ksize, CV_64F);
+    DXYkernel = cv::Mat(ksize, ksize, CV_64F);
 
-    int cols = 2*(static_cast<int>((dims[0] - dims[2])/2)) + 1;
-    int rows = 2*(static_cast<int>((dims[1] - dims[3])/2)) + 1; 
-    cv::Mat trans = transform.clone();
-    trans.at<double>(1,2) = rows/2 + 1 - (corners[3].at<double>(1,0) - corners[0].at<double>(1,0) + 1)/2;
-    trans.at<double>(0,2) = cols/2 + 1 - (corners[3].at<double>(0,0) - corners[0].at<double>(0,0) + 1)/2;
-//    trans.at<double>(1,2) = cols/2 + 1 - (dims[1] - dims[3] + 1)/2;
-//    trans.at<double>(0,2) = rows/2 + 1 - (dims[0] - dims[2] + 1)/2;
-    cv::warpAffine(gauss, kernel, trans, cv::Size(cols,rows), cv::INTER_LINEAR);
-    kernel /= cv::sum(kernel)[0];
-    kernel.convertTo(kernel, type);
-
+    for (int row = -ksize/2; row <= ksize/2; ++row)
+      for (int col = -ksize/2; col <= ksize/2; ++col)
+      {
+        cv::Mat x = (cv::Mat_<double>(2,1) << row, col);
+        cv::Mat exponent = -0.5 * x.t() * Ainv * x;
+        double gauss = exp(exponent.at<double>(0)) * normaliser;
+        hessian = gauss * (Ainv * x * x.t() * Ainv - Ainv);
+        DXXkernel.at<double>(col + ksize/2, row + ksize/2) = hessian.at<double>(0,0);
+        DYYkernel.at<double>(col + ksize/2, row + ksize/2) = hessian.at<double>(1,1);
+        DXYkernel.at<double>(col + ksize/2, row + ksize/2) = hessian.at<double>(1,0);       
+//        hessian.copyTo(kernel[col + ksize/2][row + ksize/2]);
+      }
+    DXXkernel.convertTo(DXXkernel, type);
+//    DXXkernel /= cv::sum(DXXkernel)[0];
+    DYYkernel.convertTo(DYYkernel, type);
+//    DYYkernel /= cv::sum(DYYkernel)[0];
+    DXYkernel.convertTo(DXYkernel, type);  
+//    DXYkernel /= cv::sum(DXYkernel)[0];  
   }
-*/  
+ 
 }
 
 
@@ -452,7 +448,7 @@ static void build_gauss_pyr(cv::Mat& base, std::vector< std::vector<cv::Mat> >& 
 
         /* base of new octave is halved image from end of previous octave */
       else if ( i == 0 )
-        cv::resize(gauss_pyr[o-1][intvls], gauss_pyr[o][i], cv::Size(), 0.5, 0.5, CV_INTER_AREA);
+        cv::resize(gauss_pyr[o-1][intvls], gauss_pyr[o][i], cv::Size(), 0.5, 0.5, CV_INTER_NN);
 
         /* blur the current octave's last image to create the next one */
       else
@@ -760,16 +756,11 @@ static double interp_contr( const std::vector< std::vector<cv::Mat> >& scale_pyr
   X.push_back(xc);
   X.push_back(xr);
   X.push_back(xi);
-//  double t[1], x[3] = { xc, xr, xi };
 
-//  cvInitMatHeader( &X, 3, 1, CV_64FC1, x, CV_AUTOSTEP );
-//  cvInitMatHeader( &T, 1, 1, CV_64FC1, t, CV_AUTOSTEP );
-//  dD = deriv_3D( dog_pyr, octv, intvl, r, c );
   deriv_3D( scale_pyr, dD, octv, intvl, row, col);
-  //cv::gemm( dD, X, 1, cv::Mat(), 0, T, 1);
+
   T = dD.t() * X;
-//  cvGEMM( dD, &X, 1, NULL, 0, &T,  CV_GEMM_A_T );
-//  cvReleaseMat( &dD );
+
     return scale_pyr[octv][intvl].at<float>(row,col) + T.at<double>(0) * 0.5;
 //  return pixval32f( dog_pyr[octv][intvl], r, c ) + t[0] * 0.5;
 }
@@ -881,27 +872,54 @@ static struct feature* interp_extremum(const std::vector< std::vector<cv::Mat> >
     corner-like or 1 otherwise.
 */
 //static bool is_too_edge_like( IplImage* dog_img, int r, int c, int curv_thr )
-static bool is_too_edge_like(const cv::Mat& scale_img, int row, int col, int curv_thr)
+static bool is_too_edge_like(const cv::Mat& scale_img, int row, int col, int curv_thr, const cv::Mat& transform)
 {
 //  double d, dxx, dyy, dxy, tr, det;
 
   /* principal curvatures are computed using the trace and det of Hessian */
+// ORIGINAL
+//*/
   double val = scale_img.at<float>(row,col);
-  double dxx = scale_img.at<float>(row,col+1) + scale_img.at<float>(row,col-1) - 2*val;
-  double dyy = scale_img.at<float>(row+1,col) + scale_img.at<float>(row-1,col) - 2*val;
+  double dxx = (scale_img.at<float>(row,col+1) + scale_img.at<float>(row,col-1) - 2*val);
+  double dyy = (scale_img.at<float>(row+1,col) + scale_img.at<float>(row-1,col) - 2*val);
   double dxy = ( scale_img.at<float>(row+1,col+1) - scale_img.at<float>(row+1,col-1) -
                scale_img.at<float>(row-1,col+1) + scale_img.at<float>(row-1,col-1) ) / 4.0;
   double trace = dxx + dyy;
   double det = dxx*dyy - dxy*dxy;
-  /*
-  d = pixval32f(dog_img, r, c);
-  dxx = pixval32f( dog_img, r, c+1 ) + pixval32f( dog_img, r, c-1 ) - 2 * d;
-  dyy = pixval32f( dog_img, r+1, c ) + pixval32f( dog_img, r-1, c ) - 2 * d;
-  dxy = ( pixval32f(dog_img, r+1, c+1) - pixval32f(dog_img, r+1, c-1) -
-          pixval32f(dog_img, r-1, c+1) + pixval32f(dog_img, r-1, c-1) ) / 4.0;
-  tr = dxx + dyy;
-  det = dxx * dyy - dxy * dxy;
-*/
+//*/
+// SOBEL
+/*/
+  double val = scale_img.at<float>(row,col);
+  double dxx = (scale_img.at<float>(row-1,col-1) + scale_img.at<float>(row-1,col+1)
+             +  scale_img.at<float>(row+1,col-1) + scale_img.at<float>(row+1,col+1)
+             +  2*scale_img.at<float>(row,col-1) + 2*scale_img.at<float>(row,col+1)
+             -  2*scale_img.at<float>(row-1,col) - 2*scale_img.at<float>(row+1,col)
+             -  4*val) * 0.25;
+  double dyy = (scale_img.at<float>(row-1,col-1) + scale_img.at<float>(row-1,col+1)
+             +  scale_img.at<float>(row+1,col-1) + scale_img.at<float>(row+1,col+1)
+             +  2*scale_img.at<float>(row-1,col) + 2*scale_img.at<float>(row+1,col)
+             -  2*scale_img.at<float>(row,col-1) - 2*scale_img.at<float>(row,col+1)
+             -  4*val) * 0.25;
+  double dxy = (scale_img.at<float>(row+1,col+1) - scale_img.at<float>(row+1,col-1) -
+               scale_img.at<float>(row-1,col+1) + scale_img.at<float>(row-1,col-1)) * 0.25; 
+  double trace = dxx + dyy;
+  double det = dxx*dyy - dxy*dxy;             
+//*/
+// GAUSSIAN
+/*/
+  cv::Mat xxkern, yykern, xykern;
+  double sig = 1;
+  pk::getWarpedHessian(xxkern, yykern, xykern, transform, sig, -1, scale_img.type());
+  int size = xxkern.rows;
+  cv::Mat temp = scale_img(cv::Range(row-1-size/2,row+size/2), cv::Range(col-1-size/2,col+size/2));
+
+  
+  double dxx = cv::sum(xxkern.mul(temp))[0];
+  double dyy = cv::sum(yykern.mul(temp))[0];
+  double dxy = cv::sum(xykern.mul(temp))[0];
+  double trace = dxx + dyy;
+  double det = dxx*dyy - dxy*dxy;
+//*/    
   /* negative determinant -> curvatures have different signs; reject feature */
   if( det <= 0 )
     return true;
@@ -930,7 +948,7 @@ static bool is_too_edge_like(const cv::Mat& scale_img, int row, int col, int cur
 //                                   CvMemStorage* storage )
 static CvSeq* scale_space_extrema(const std::vector< std::vector<cv::Mat> >& scale_pyr,
                                  int octvs, int intvls, double contr_thr, int curv_thr,
-                                 CvMemStorage* storage)
+                                 CvMemStorage* storage, const cv::Mat& transform)
 {
   CvSeq* features;
   double prelim_contr_thr = 0.5 * contr_thr / intvls;
@@ -952,7 +970,7 @@ static CvSeq* scale_space_extrema(const std::vector< std::vector<cv::Mat> >& sca
                   {
                     ddata = feat->feature_data;
                     if( ! is_too_edge_like( scale_pyr[ddata->octv][ddata->intvl],
-                                            ddata->r, ddata->c, curv_thr ) )
+                                            ddata->r, ddata->c, curv_thr, transform ) )
                       {
                         cvSeqPush( features, feat );
                       }
@@ -1547,14 +1565,13 @@ static void release_features( struct feature** feat, int count )
 }
 
 static void compute_features( const ImagePyrData* imgPyrData, struct feature** feat, int& count,
-                       double contr_thr, int curv_thr )
+                       double contr_thr, int curv_thr, const cv::Mat& transform )
 {
     CvMemStorage* storage;
     CvSeq* features;
 
     storage = cvCreateMemStorage( 0 );
-    features = scale_space_extrema( imgPyrData->scale_pyr, imgPyrData->octaves, imgPyrData->intervals,
-                                    contr_thr, curv_thr, storage );
+    features = scale_space_extrema( imgPyrData->scale_pyr, imgPyrData->octaves, imgPyrData->intervals, contr_thr, curv_thr, storage, transform );
 
     calc_feature_scales( features, imgPyrData->sigma, imgPyrData->intervals );
     if( imgPyrData->is_img_dbl )
@@ -1637,6 +1654,17 @@ pk::SIFT::SIFT( const CommonParams& _commParams,
     commParams = _commParams;
     detectorParams = _detectorParams;
     descriptorParams = _descriptorParams;
+}
+
+pk::SIFT::SIFT( const CommonParams& _commParams,
+            const DetectorParams& _detectorParams,
+            const DescriptorParams& _descriptorParams,
+            cv::Mat& transform )
+{
+    commParams = _commParams;
+    detectorParams = _detectorParams;
+    descriptorParams = _descriptorParams;
+    transformation = transform;
 }
 
 int pk::SIFT::descriptorSize() const
@@ -1816,6 +1844,7 @@ static inline void keyPointToFeature( const cv::KeyPoint& keypoint, feature& fea
 void pk::SIFT::operator()(const cv::Mat& image, const cv::Mat& mask,
                       std::vector<cv::KeyPoint>& keypoints, cv::Mat& transform) const
 {
+
     if( image.empty() || image.type() != CV_8UC1 )
         CV_Error( CV_StsBadArg, "image is empty or has incorrect type (!=CV_8UC1)" );
 
@@ -1863,7 +1892,7 @@ void pk::SIFT::operator()(const cv::Mat& image, const cv::Mat& mask,
     ImagePyrData pyrImages( fimg, commParams.nOctaves, commParams.nOctaveLayers, SIFT_SIGMA, SIFT_IMG_DBL, transform );
 
     int feature_count = 0;
-    compute_features( &pyrImages, &features, feature_count, detectorParams.threshold, (int)detectorParams.edgeThreshold );
+    compute_features( &pyrImages, &features, feature_count, detectorParams.threshold, (int)detectorParams.edgeThreshold, transform );
 
     // convert to cv::KeyPoint structure
     keypoints.resize( feature_count );
@@ -1940,6 +1969,7 @@ void pk::SIFT::operator()(const cv::Mat& image, const cv::Mat& mask,
                       cv::Mat& transform,
                       bool useProvidedKeypoints) const
 {
+
     if( image.empty() || image.type() != CV_8UC1 )
         CV_Error( CV_StsBadArg, "img is empty or has incorrect type" );
 

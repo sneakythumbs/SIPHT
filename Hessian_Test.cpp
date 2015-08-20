@@ -35,7 +35,7 @@ int main(int argc, char** argv )
     std::vector<cv::KeyPoint> img1_points, img2_points;
     
     double edge = 10;
-    double thresh = 1e-1;
+    double thresh = 5e-2;
     int octaves = 5;
     int intervals = 3;
     
@@ -47,8 +47,9 @@ int main(int argc, char** argv )
 
     cv::drawKeypoints(img1, img1_points, output, cv::Scalar::all(-1), 4);   
 
-    cv::namedWindow("Laplace", CV_WINDOW_KEEPRATIO );
-    cv::imshow("Laplace", output);
+    cv::namedWindow("Hessian_Laplace", CV_WINDOW_KEEPRATIO );
+    cv::imshow("Hessian_Laplace", output);
+//    cv::imwrite("Hessian_Laplace_graffiti.png", output);
     cv::waitKey(0);
     
     return 0;

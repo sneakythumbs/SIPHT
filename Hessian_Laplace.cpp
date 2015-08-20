@@ -72,7 +72,7 @@ namespace pk
                 //TODO interpolate scale
                 if (!unfound)
                 {             
-                  double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2 * 3;
+                  double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2;
                   cv::KeyPoint point(coords * 0.5, size);
 
 
@@ -105,7 +105,7 @@ namespace pk
                 int unfound = interpSpacialExtremum(hessianPyramid[oct][inter], oct, row, col, coords);
                 if (!unfound)
                 {             
-                  double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2 * 3;
+                  double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2;
                   cv::KeyPoint point(coords * 0.5, size);
                   keypoints.push_back(point);
                 }     

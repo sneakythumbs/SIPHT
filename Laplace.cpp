@@ -484,7 +484,7 @@ namespace pk
     point.pt.x = ( col + xc ) * pow( 2.0, oct ) * 0.5;
     point.pt.y = ( row + xr ) * pow( 2.0, oct ) * 0.5;
     double size = sigma[0] * pow(2.0, oct + static_cast<double>(inter + xi) / intervals) * 0.5;
-    point.size = size * 4 * 3;
+    point.size = size * 4;
     
     coords.x = col;
     coords.y = row;

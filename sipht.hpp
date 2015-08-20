@@ -64,6 +64,7 @@ namespace pk
 	class  SIFT
 	{
 	public:
+		  cv::Mat transformation;
     	struct  CommonParams
     	{
     	    static const int DEFAULT_NOCTAVES = 4;
@@ -104,6 +105,7 @@ namespace pk
     	    bool recalculateAngles;
     	};
 	
+	
     	SIFT();
     	//! sift-detector constructor
     	SIFT( double _threshold, double _edgeThreshold,
@@ -121,6 +123,10 @@ namespace pk
     	SIFT( const CommonParams& _commParams,
     	      const DetectorParams& _detectorParams = DetectorParams(),
     	      const DescriptorParams& _descriptorParams = DescriptorParams() );
+    	SIFT( const CommonParams& _commParams,
+            const DetectorParams& _detectorParams,
+            const DescriptorParams& _descriptorParams,
+            cv::Mat& transform );
 	
     	//! returns the descriptor size in floats (128)
     	int descriptorSize() const;

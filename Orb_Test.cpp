@@ -38,7 +38,7 @@ int main(int argc, char** argv )
     
     std::vector<cv::KeyPoint> img1_points, img2_points;
     
-    int nfeatures=500;
+    int nfeatures=1000;
     float scaleFactor=1.4f;
     int nlevels=5;
     int edgeThreshold=31;
@@ -87,6 +87,7 @@ int main(int argc, char** argv )
     cv::drawKeypoints(img2, img2_points, output2, cv::Scalar::all(-1), 4);  
     cv::namedWindow("korb", CV_WINDOW_KEEPRATIO );
     cv::imshow("korb", output);
+//    cv::imwrite("orb_graffiti.png", output);
     cv::namedWindow("zorb", CV_WINDOW_KEEPRATIO );
     cv::imshow("zorb", output2);    
     cv::waitKey(0);

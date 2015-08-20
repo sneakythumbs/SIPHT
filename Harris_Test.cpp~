@@ -37,7 +37,7 @@ int main(int argc, char** argv )
     harry.detector(img1, img2_points);
 
     std::cout << img1_points.size() << " " << img2_points.size() << std::endl;
-    for (auto& point : img1_points) std::cout << point << std::endl;    
+    for (auto& point : img1_points) std::cout << point.pt << std::endl;    
     cv::Mat output, snoutput;
 
     cv::drawKeypoints(img1, img1_points, output, cv::Scalar::all(-1), 4);
@@ -45,6 +45,7 @@ int main(int argc, char** argv )
 
     cv::namedWindow("Keypoints", CV_WINDOW_KEEPRATIO );
     cv::imshow("Keypoints", output);
+    cv::imwrite("Harris_Laplace_graffiti.png", output);
     cv::namedWindow("Points", CV_WINDOW_KEEPRATIO );
     cv::imshow("Points", snoutput);
     cv::waitKey(0);

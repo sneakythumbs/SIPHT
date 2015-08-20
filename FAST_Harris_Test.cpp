@@ -37,7 +37,7 @@ int main(int argc, char** argv )
     
     std::vector<cv::KeyPoint> img1_points, img2_points;
       
-    FAST_Harris freddy(img1, 20, 1e6, 0.04, 10, 20);
+    FAST_Harris freddy(img1, 20, 1e10, 0.04, 10, 20);
     freddy.detector(img1_points);
     freddy.detector(img2, img2_points);
     

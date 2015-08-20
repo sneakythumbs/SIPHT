@@ -46,7 +46,13 @@ int main(int argc, char** argv )
                    CV_INTER_CUBIC ,IPL_BORDER_CONSTANT);
     warpAffine(img1_colour, img2_colour, trans, dims,
                                         CV_INTER_CUBIC ,IPL_BORDER_CONSTANT);
-
+    cv::namedWindow("original", CV_WINDOW_AUTOSIZE );
+    cv::imshow("original", img1_colour);  
+    cv::waitKey(0);
+    cv::namedWindow("warped", CV_WINDOW_AUTOSIZE );
+    cv::imshow("warped", img2_colour);   
+    cv::waitKey(0);
+//    imwrite("graffiti_thumb_yscale.png", img2_colour);
 
 //    cv::Size dims = img2.size();
 //    int type = img2.type();
@@ -76,8 +82,9 @@ int main(int argc, char** argv )
 
 //    sipht.setScaleType(atoi(argv[4]));
 
-//    sipht(img1, mask, img1_points, img1_descriptors, identity);
-//    sipht(img2, mask, img2_points, img2_descriptors, transform);
+    sipht(img1, mask, img1_points, img1_descriptors, identity);
+    sipht(img2, mask, img2_points, img2_descriptors, transform);
+/*/
     for ( int thresh = 2; thresh <= 20; thresh += 2)
     {
 //    cv:SIFT sift(0.04, (double)thresh);
@@ -127,8 +134,9 @@ int main(int argc, char** argv )
       if (tol == 0.01) tol = 0;
     }
     }
-/*/
+//*/
     std::vector< std::vector<cv::Mat> > DoG = sipht.getScalePyramid(img2, transform);
+    std::vector< std::vector<cv::Mat> > CaT = sipht.getScalePyramid(img2, identity);
     cv::namedWindow("ScaleSpace", CV_WINDOW_AUTOSIZE );
     std::vector<cv::KeyPoint> localPoints;
     
@@ -136,9 +144,9 @@ int main(int argc, char** argv )
       for (auto interval = octave->begin(); interval != octave->end(); ++interval) 
       {
 //        std::cout << "Total " << cv::sum(*interval)[0] << std::endl; 
-//        cv::Mat lol = (*interval) * 1e1; 
-//        cv::imshow("ScaleSpace", lol);   
-//        cv::waitKey(0);
+        cv::Mat lol = (*interval) * 1e1; 
+        cv::imshow("ScaleSpace", lol);   
+        cv::waitKey(0);
           scale_space_extrema((*interval), common.nOctaveLayers, 
                               detector.threshold, detector.edgeThreshold,
                               localPoints);
