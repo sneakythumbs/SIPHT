@@ -7,7 +7,7 @@ CXXFLAGS+= -std=c++11 -O3 -fopenmp -I '/home/kenny/Courses/Semester4/OpenCV/myOp
 
 LDADD=	-L${HOME}/Courses/Semester4/OpenCV/myOpenCV/lib \
 	-lopencv_core -lopencv_highgui -lopencv_features2d \
-	-lopencv_imgproc -lopencv_flann
+	-lopencv_imgproc -lopencv_flann -fopenmp
 
 %.o: %.cpp %.hpp
 	${CXX} -c ${CXXFLAGS} $<
@@ -18,7 +18,7 @@ skewer: pk.o sipht.o skewer.o
 test: test.o sipht.o
 	${CXX} $^ -o $@	${LDADD}
 	
-harris: pk.o Harris_Laplace.o Harris_Test.o
+harris: pk.o Harris_Laplace.o Affine_Adaptation.o Harris_Test.o
 	${CXX} $^ -o $@	${LDADD}
 	
 laplace: sipht.o Laplace.o Laplace_Test.o

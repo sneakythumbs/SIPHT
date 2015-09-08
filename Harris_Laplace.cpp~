@@ -1,4 +1,5 @@
 #include "Harris_Laplace.hpp"
+#include "Affine_Adaptation.hpp"
 
 namespace pk
 {
@@ -73,19 +74,34 @@ namespace pk
                 //TODO interpolate scale
                 if (!unfound)
                 {             
-                  double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2;
-                  cv::KeyPoint point(coords * 0.5, size);
+                  double size = sigma[0] * pow(2.0, oct + (double)inter / intervals);
+//                  cv::KeyPoint point(coords * 0.5, size);
+                  cv::KeyPoint point(coords, size);
+                  int method = 1;
+                  if (method)
+                  {
+                    Affine_Adaptation adaptor(method);
+                    Elliptic_KeyPoint EPoint;
+                    adaptor.keyPointToElliptic(point, EPoint);
+                    bool isDivergent = adaptor.calcAffineAdaptation(gaussPyramid[0][0], EPoint, 3);
+                    if (!isDivergent)
+                    {
+                      adaptor.ellipticToKeyPoint(EPoint, point);
+                      point.pt *= 0.5;
+                      keypoints.push_back(point);
+                    }
+                  }
 
 
 //                  int code = findScale(row, col, oct, inter, point);
 //                  if (0 == code)
-                  keypoints.push_back(point);
-                }  
-              }        
-            }
+                  if (!method)
+                    keypoints.push_back(point);
+                }
+              }  
+            }        
           }
     return;
-
   }
 
   void Harris_Laplace::detector(cv::Mat& img, 
@@ -108,16 +124,32 @@ namespace pk
                 //TODO interpolate scale
                 if (!unfound)
                 {             
-                  double size = sigma[0] * pow(2.0, oct + (double)inter / intervals) * 2;
-                  cv::KeyPoint point(coords * 0.5, size);
+                  double size = sigma[0] * pow(2.0, oct + (double)inter / intervals);
+//                  cv::KeyPoint point(coords * 0.5, size);
+                  cv::KeyPoint point(coords, size);
+                  int method = 2;
+                  if (method)
+                  {
+                    Affine_Adaptation adaptor(method);
+                    Elliptic_KeyPoint EPoint;
+                    adaptor.keyPointToElliptic(point, EPoint);
+                    bool isDivergent = adaptor.calcAffineAdaptation(gaussPyramid[0][0], EPoint, 3);
+                    if (!isDivergent)
+                    {
+                      adaptor.ellipticToKeyPoint(EPoint, point);
+                      point.pt *= 0.5;
+                      keypoints.push_back(point);
+                    }
+                  }
 
 
 //                  int code = findScale(row, col, oct, inter, point);
 //                  if (0 == code)
-                  keypoints.push_back(point);
-                }  
-              }        
-            }
+                  if (!method)
+                    keypoints.push_back(point);
+                }
+              }  
+            }        
           }
     return;
   }
@@ -370,7 +402,7 @@ namespace pk
     Calculates interpolated pixel contrast.  Based on Eqn. (3) in Lowe's
     paper.
   
-    @param scale_img one scale level of DoG
+    @param scale_img one scale level of Harris Pyramid
     @param row pixel row
     @param col pixel column
     @param xr interpolated subpixel increment to row
@@ -452,7 +484,7 @@ namespace pk
     if (-1 == interval) return 2;
     if (interval == inter)
     {
-      cv::Point coords;
+      cv::Point2f coords;
       double size = sigma[0] * pow(2.0, oct + static_cast<double>(inter) / intervals) * 2;
       interpSpacialExtremum(harrisPyramid[oct][inter], oct, row, col, coords);
       result = cv::KeyPoint(coords * 0.5, size, -1, -1, oct, inter);

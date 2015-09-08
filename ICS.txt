@@ -1,0 +1,162 @@
+void executeICSscript(Mat &ics)
+{
+	string programPath = testSettings.icsExecutablePathImagePair;
+	programPath.append(" ");
+	programPath.append( testSettings.tmpFolder );
+	programPath.append("  >NUL 2>NUL");
+
+	string resPath = testSettings.tmpFolder;
+
+	system( programPath.c_str() );
+	resPath.append("/tmpMat.txt");
+
+
+	ifstream in;
+	while (in.is_open() != true )
+		in.open(resPath.c_str());
+	double value;
+	for(int r=0; r<2; r++)
+		for(int c=0; c<2; c++)
+		{
+			in >> value;
+			ics.at<double>(r,c) = value;
+		}
+	in.close();
+
+	resPath.insert(0, "rm ");
+	system( resPath.c_str() );
+
+	ics = ics.t();
+	normalizeTransformationMatrix(ics, ics);
+
+	//normalize ics matrices to det =1
+	double detICS =  ics.at<double>(0,0)*ics.at<double>(1,1) - ics.at<double>(0,1)*ics.at<double>(1,0);
+	ics /= sqrt(fabs(detICS));
+}
+
+void normalizeTransformationMatrix(Mat &src, Mat &dst)
+{
+	dst = src.clone();
+	svdInv(dst);
+//	Mat trMatCopy1 = trMat;
+	double tr00 = dst.at<double>(0,0),
+		   tr01 = dst.at<double>(0,1),
+		   tr10 = dst.at<double>(1,0),
+		   tr11 = dst.at<double>(1,1);
+
+	double l1 = sqrt(tr00*tr00 + tr10*tr10),
+		   l2 = sqrt(tr01*tr01 + tr11*tr11);
+
+
+
+
+
+	double det = sqrt(fabs((dst.at<double>(0,0) * dst.at<double>(1,1) - dst.at<double>(0,1) * dst.at<double>(1,0))));
+	Mat normalizedTr = dst/det;
+
+
+
+////	normalizedTr = normalizedTr.inv();
+	// Normalize first column vector to 0 degree
+	double angle = -atan2(dst.at<double>(1,0), dst.at<double>(0,0));
+	Mat rotationMatrix = (Mat_<double>(2,2) << cos(angle), -sin(angle), sin(angle), cos(angle));
+	normalizedTr = rotationMatrix * normalizedTr;
+
+
+	Mat flip = ( Mat_<double>(2,2) << 1, 0, 0, 1);
+	if(normalizedTr.at<double>(0,0) * normalizedTr.at<double>(1,1) < 0)
+	{
+		flip.at<double>(1,1) *= -1;
+		flip.at<double>(0,1) *= -1;
+	}
+
+	normalizedTr = flip * normalizedTr;
+
+	det = sqrt(fabs((normalizedTr.at<double>(0,0) * normalizedTr.at<double>(1,1) - normalizedTr.at<double>(0,1) * normalizedTr.at<double>(1,0))));
+	dst.at<double>(0,0) = normalizedTr.at<double>(0,0) / det;
+	dst.at<double>(1,0) = normalizedTr.at<double>(1,0) / det;
+	dst.at<double>(0,1) = normalizedTr.at<double>(0,1) / det;
+	dst.at<double>(1,1) = normalizedTr.at<double>(1,1) / det;
+}
+
+
+void svdInv(Mat &inp)
+{
+	Mat w, u, vt;
+	SVDecomp(inp, w, u , vt);
+
+	Mat W = (Mat_<double>(2,2) << 1/sqrt(w.at<double>(0,0)), 0, 0, 1/sqrt(w.at<double>(0,1)));
+  // SHould This be square root?
+	inp = u* W * vt;
+}
+
+
+
+void calculateIsotropy( Mat &img, BaseFeature *eFt_p, int radiusX_i, int radiusY_i, vector<Point2d> *gradients )
+{
+	Mat trMat = Mat::eye(2,2, CV_64FC1);
+
+	Point2d	grad;
+
+	double histWidth_d = m_params_o.siftDescriptorScaleFactor_d * eFt_p->scl_octv_d * sqrt(2.0);
+	double expDenom_d  = ( (double) m_params_o.descriptorWidth_i ) * ( (double) m_params_o.descriptorWidth_i ) * 1.5f;
+
+	int r_i = eFt_p->r_i;
+	int c_i = eFt_p->c_i;
+
+
+	//get the conjugated diameters of the ellipse, and the orientation of those
+	Mat conDiaX_o =  Mat( Point2d( 0.f, 1.f) );
+	Mat conDiaY_o =  Mat( Point2d( 1.f, 0.f ) );
+
+	conDiaX_o     = (trMat) *  conDiaX_o ;
+	conDiaY_o     = (trMat) *  conDiaY_o ;
+
+	//conjugated diameters
+	double conDiaOriX_d = -atan2( conDiaX_o.at<double>(0,1),conDiaX_o.at<double>(0,0));
+	double conDiaOriY_d = -atan2( conDiaY_o.at<double>(0,1),conDiaY_o.at<double>(0,0));
+
+
+	Mat imgCP = img.clone();
+	Mat tmpInverseTransformation_o = trMat.inv();
+	for( int i_i = -radiusY_i; i_i <= radiusY_i; ++i_i )
+			for( int j_i = -radiusX_i; j_i <= radiusX_i; ++j_i )
+			{
+				Point2f center(eFt_p->c_i + j_i, eFt_p->r_i + i_i);
+				Mat transformedLocation_o  =  Mat( Point2d( j_i , i_i ) );
+				transformedLocation_o  =  tmpInverseTransformation_o * transformedLocation_o;
+
+				double relY_d              =  transformedLocation_o.at<double>( 0, 1 ) / histWidth_d;
+				double relX_d              =  transformedLocation_o.at<double>( 0, 0 ) / histWidth_d;
+
+				double cBinPosition_d = relX_d  + m_params_o.descriptorWidth_i / 2.f - .5f;
+				double rBinPosition_d = relY_d  + m_params_o.descriptorWidth_i / 2.f - .5f;
+
+				//check if the result is inside the Histogram, and if the pixel is in the image
+				if( r_i + i_i > 0 && r_i + i_i < img.rows - 1 && c_i + j_i > 0 && c_i + j_i < img.cols -1)
+					if( rBinPosition_d > -1.0  &&  rBinPosition_d <  m_params_o.descriptorWidth_i  &&  cBinPosition_d > -1.0  &&  cBinPosition_d <  m_params_o.descriptorWidth_i )
+					{
+						double 	dx_d,
+								dy_d;
+
+						dx_d = img.at<float>( r_i + i_i, c_i + j_i) - img.at<float>( r_i + i_i, c_i + j_i + 1);
+						dy_d = img.at<float>( r_i + i_i, c_i + j_i) - img.at<float>( r_i + i_i + 1, c_i + j_i);
+
+						double weight_d  = exp( -(relX_d * relX_d) / expDenom_d  - ( relY_d * relY_d) / expDenom_d  );
+
+						grad.x = dx_d;
+						grad.y = dy_d;
+
+						double magnitude = sqrt( grad.x* grad.x + grad.y*grad.y);
+						double phase = atan2(grad.y, grad.x);
+						if(gradients)
+							if(magnitude > 0.010)
+							{
+//								grad.x *= weight_d;
+//								grad.y *= weight_d;
+
+								gradients->push_back(grad);
+							}
+					}
+			}
+}

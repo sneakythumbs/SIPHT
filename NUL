@@ -1,0 +1,15 @@
+Loading required package: methods
+Loading required package: mvtnorm
+Loading required package: survey
+Loading required package: grid
+
+Attaching package: ‘survey’
+
+The following object is masked from ‘package:graphics’:
+
+    dotchart
+
+Error in solve.default(t(data.centered) %*% data.centered) : 
+  system is computationally singular: reciprocal condition number = 8.95482e-21
+Calls: ics -> do.call -> S2 -> solve -> solve.default
+Execution halted
