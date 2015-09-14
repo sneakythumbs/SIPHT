@@ -4,7 +4,7 @@
 namespace pk
 {
 
-  Harris_Laplace::Harris_Laplace(float _k, float thresh, int oct, int inter, double _sigma)
+  Harris_Laplace::Harris_Laplace(int _method, float _k, float thresh, int oct, int inter, double _sigma)
   {
     k = _k;
     threshold = thresh;
@@ -12,6 +12,8 @@ namespace pk
     intervals = inter;
     sigma.resize(intervals + 3);
     border = 5;
+    recursion = 0;
+    method = _method;
     /*
       precompute Gaussian sigmas using the following formula:
       \sigma_{total}^2 = \sigma_{i}^2 + \sigma_{i-1}^2
@@ -26,7 +28,7 @@ namespace pk
     }
   }
   
-  Harris_Laplace::Harris_Laplace(const cv::Mat& img, float _k, float thresh, int oct, int inter, double _sigma)
+  Harris_Laplace::Harris_Laplace(const cv::Mat& img, int _method, float _k, float thresh, int oct, int inter, double _sigma)
   {
     k = _k;
     threshold = thresh;
@@ -34,6 +36,8 @@ namespace pk
     intervals = inter;
     sigma.resize(intervals + 3);
     border = 5;
+    recursion = 0;
+    method = _method;
     /*
       precompute Gaussian sigmas using the following formula:
       \sigma_{total}^2 = \sigma_{i}^2 + \sigma_{i-1}^2
@@ -77,7 +81,7 @@ namespace pk
                   double size = sigma[0] * pow(2.0, oct + (double)inter / intervals);
 //                  cv::KeyPoint point(coords * 0.5, size);
                   cv::KeyPoint point(coords, size);
-                  int method = 1;
+//                  int method = 1;
                   if (method)
                   {
                     Affine_Adaptation adaptor(method, ".", ".");
@@ -127,7 +131,7 @@ namespace pk
                   double size = sigma[0] * pow(2.0, oct + (double)inter / intervals);
 //                  cv::KeyPoint point(coords * 0.5, size);
                   cv::KeyPoint point(coords, size);
-                  int method = 2;
+//                  int method = 2;
                   if (method)
                   {
                     Affine_Adaptation adaptor(method, ".", ".");

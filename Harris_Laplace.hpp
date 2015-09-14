@@ -30,10 +30,11 @@ namespace pk
     int intervals;
     int border;
     std::vector<double> sigma;
-    int recursion = 0;
+    int recursion;
+    int method;
     
-    Harris_Laplace( float _k = 0.04, float thresh = 0.0, int oct = 4, int inter = 3, double _sigma = 1.6 );
-    Harris_Laplace( const cv::Mat& img, float _k = 0.04, float thresh = 0.0, int oct = 4, int inter = 3, double _sigma = 1.6 );
+    Harris_Laplace( int _method = 0, float _k = 0.04, float thresh = 0.0, int oct = 4, int inter = 3, double _sigma = 1.6 );
+    Harris_Laplace( const cv::Mat& img, int _method = 0, float _k = 0.04, float thresh = 0.0, int oct = 4, int inter = 3, double _sigma = 1.6 );
     
     void initialise ( const cv::Mat& img );
     void detector( std::vector<cv::KeyPoint>& keypoints );

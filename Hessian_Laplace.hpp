@@ -30,7 +30,7 @@ namespace pk
     int intervals;
     int border;
     std::vector<double> sigma;
-    int recursion = 0;
+    int recursion;
     
     Hessian_Laplace( float _k = 0.04, float thresh = 0.0, int oct = 4, int inter = 3, double _sigma = 1.6 );
     Hessian_Laplace( const cv::Mat& img, float _k = 0.04, float thresh = 0.0, int oct = 4, int inter = 3, double _sigma = 1.6 );

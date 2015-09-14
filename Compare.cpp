@@ -45,7 +45,7 @@ int main(int argc, char** argv )
     {
       check.changeMethod("Harris_Laplace");
   
-      Harris_Laplace harry(check.img1, 0.04, 5e-6, 5, 10);
+      Harris_Laplace harry(check.img1, 0, 0.04, 5e-6, 5, 10);
       harry.detector(img1Points);
       harry.detector(check.img2, img2Points);
   

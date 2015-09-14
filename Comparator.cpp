@@ -29,14 +29,14 @@ namespace pk
     getSize(img1, transform, dims);
     warpAffine(img1, img2, transform, dims, CV_INTER_CUBIC, IPL_BORDER_CONSTANT);
     
-    file.open(outputPath + "/" + methodName + "/" + imageName + "/" + methodName + "-" + imageName + matrix, std::ios::out );
+    file.open(methodName + "-" + imageName + matrix, std::ios::out );
    
   }
   
   void Comparator::changeFile()
   {
     file.close();
-    file.open(outputPath + "/" + methodName + "/" + imageName + "/" + methodName + "-" + imageName + matrix, std::ios::out );
+    file.open(methodName + "-" + imageName + matrix, std::ios::out );
   }
   
   void Comparator::changeMethod(const char* method)
@@ -83,6 +83,8 @@ namespace pk
       {
         if (img2Mask[j]) continue;
         
+        float min = std::min(img1Points[i].size, img2Points[j].size);
+        if (fabs(img1Points[i].size - img2Points[j].size) > 0.2*min) continue;
         cv::Mat warped = (cv::Mat_<double>(2,1) << img2Points[j].pt.x, img2Points[j].pt.y);
         if (cv::norm(warped - original) < tol)
         {
@@ -118,6 +120,8 @@ namespace pk
         {
           if (img2Mask[j]) continue;
           
+          float min = std::min(img1Points[i].size, img2Points[j].size);
+          if (fabs(img1Points[i].size - img2Points[j].size) > 0.2*min) continue;
           cv::Mat warped = (cv::Mat_<double>(2,1) << img2Points[j].pt.x, img2Points[j].pt.y);
           if (cv::norm(warped - original) < tol)
           {

@@ -30,7 +30,7 @@ namespace pk
     int intervals;
     int border;
     std::vector<double> sigma;
-    int recursion = 0;
+    int recursion;
     
     Laplace( int _curve = 10, float thresh = 0.0, int oct = 4, int inter = 3, double _sigma = 1.6 );
     Laplace( const cv::Mat& img, int _curve = 10, float thresh = 0.0, int oct = 4, int inter = 3, double _sigma = 1.6 );

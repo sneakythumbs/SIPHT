@@ -32,7 +32,7 @@ int main(int argc, char** argv )
     
     std::vector<cv::KeyPoint> img1_points, img2_points;
       
-    Harris_Laplace harry(img1, 0.04, 5e-5, 4, 5);
+    Harris_Laplace harry(img1, 2, 0.04, 5e-5, 4, 5);
     harry.detector(img1_points);
     harry.detector(img1, img2_points);
 
