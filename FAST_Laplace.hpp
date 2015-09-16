@@ -29,7 +29,7 @@ namespace pk
     int intervals;
     int border;
     std::vector<double> sigma;
-    int recursion = 0;
+    int recursion;
     
     FAST_Laplace( float thresh = 0.0, int oct = 4, int inter = 3, double _sigma = 1.6 );
     FAST_Laplace( const cv::Mat& img, float thresh = 0.0, int oct = 4, int inter = 3, double _sigma = 1.6 );

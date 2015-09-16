@@ -31,7 +31,7 @@ namespace pk
     int intervals;
     int border;
     std::vector<double> sigma;
-    int recursion = 0;
+    int recursion;
     
     FAST_Harris( float fThresh = 0.0, float hThresh = 0.0, int _k = 0.04, int oct = 4, int inter = 3, double _sigma = 1.6 );
     FAST_Harris( const cv::Mat& img, float fThresh = 0.0, float hThresh = 0.0, int _k = 0.04, int oct = 4, int inter = 3, double _sigma = 1.6 );

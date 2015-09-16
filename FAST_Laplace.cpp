@@ -8,15 +8,16 @@ namespace pk
     threshold = thresh;
     octaves = oct;
     intervals = inter;
-    sigma.resize(intervals + 2);
+    sigma.resize(intervals + 3);
     border = 5;
+    recursion = 0;
     /*
       precompute Gaussian sigmas using the following formula:
       \sigma_{total}^2 = \sigma_{i}^2 + \sigma_{i-1}^2
     */
     sigma[0] = _sigma;
     double p = pow( 2.0, 1.0 / intervals );
-    for (int inter = 1; inter < intervals + 2; ++inter )
+    for (int inter = 1; inter < intervals + 3; ++inter )
     {
         double sig_prev = pow( p, inter - 1 ) * _sigma;
         double sig_total = sig_prev * p;
@@ -29,15 +30,16 @@ namespace pk
     threshold = thresh;
     octaves = oct;
     intervals = inter;
-    sigma.resize(intervals + 2);
+    sigma.resize(intervals + 3);
     border = 5;
+    recursion= 0;
     /*
       precompute Gaussian sigmas using the following formula:
       \sigma_{total}^2 = \sigma_{i}^2 + \sigma_{i-1}^2
     */
     sigma[0] = _sigma;
     double p = pow( 2.0, 1.0 / intervals );
-    for (int inter = 1; inter < intervals + 2; ++inter )
+    for (int inter = 1; inter < intervals + 3; ++inter )
     {
         double sig_prev = pow( p, inter - 1 ) * _sigma;
         double sig_total = sig_prev * p;
@@ -61,8 +63,9 @@ namespace pk
     for (int oct = 0; oct < octaves; ++oct )
       for (int inter = 0; inter < intervals + 1; ++inter )
       {  
-        cv::Mat img8bit;
-        gaussPyramid[oct][inter].convertTo(img8bit, CV_8UC1);
+        cv::Mat img8bit, temp;
+        temp = gaussPyramid[oct][inter] * 255;
+        temp.convertTo(img8bit, CV_8UC1);
         double size = sigma[0] * pow(2.0, oct + (double)inter / intervals);
         cv::FAST(img8bit, fastPoints[oct][inter], this->threshold);
         for (auto& point : fastPoints[oct][inter])
@@ -93,12 +96,13 @@ namespace pk
     for (int oct = 0; oct < octaves; ++oct )
       for (int inter = 0; inter < intervals + 1; ++inter )
       {  
-        cv::Mat img8bit;
-        gaussPyramid[oct][inter].convertTo(img8bit, CV_8UC1);
+        cv::Mat img8bit, temp;
+        temp = gaussPyramid[oct][inter] * 255;
+        temp.convertTo(img8bit, CV_8UC1);
         double size = sigma[0] * pow(2.0, oct + (double)inter / intervals);
         cv::FAST(img8bit, fastPoints[oct][inter], this->threshold);
         for (auto& point : fastPoints[oct][inter])
-//          if (isScaleExtremum(point.pt.y, point.pt.x, oct, inter))
+          if (isScaleExtremum(point.pt.y, point.pt.x, oct, inter))
           {
             point.pt.x *= pow( 2.0, oct-1 );
             point.pt.y *= pow( 2.0, oct-1 );
@@ -180,8 +184,10 @@ namespace pk
           cv::resize(gaussPyramid[oct-1][intervals], gaussPyramid[oct][inter], cv::Size(), 0.5, 0.5, CV_INTER_NN);
 
         /* blur the current octave's last image to create the next one */
-        else
+        else{std::cout << sigma[inter] << std::endl;
          	cv::GaussianBlur(gaussPyramid[oct][inter-1], gaussPyramid[oct][inter], cv::Size(), sigma[inter]);       	
+}
+
         }
 
     return;

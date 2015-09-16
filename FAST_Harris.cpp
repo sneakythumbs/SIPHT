@@ -150,6 +150,7 @@ namespace pk
     intervals = inter;
     sigma.resize(intervals + 3);
     border = 5;
+    recursion = 0;
     /*
       precompute Gaussian sigmas using the following formula:
       \sigma_{total}^2 = \sigma_{i}^2 + \sigma_{i-1}^2
@@ -172,6 +173,7 @@ namespace pk
     intervals = inter;
     sigma.resize(intervals + 3);
     border = 5;
+    recursion = 0;
     /*
       precompute Gaussian sigmas using the following formula:
       \sigma_{total}^2 = \sigma_{i}^2 + \sigma_{i-1}^2

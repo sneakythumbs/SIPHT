@@ -8,6 +8,7 @@
 #include "Hessian_Laplace.hpp"
 #include "Laplace.hpp"
 #include "sipht.hpp"
+#include "FAST_Laplace.hpp"
 #include <limits>
 #include <iostream>
 #include <fstream>
@@ -34,6 +35,9 @@ int main(int argc, char** argv )
   Methods["ORB"] = 5;
   Methods["SIFT"] = 6;
   Methods["SIPHT"] = 7;
+  Methods["FAST"] = 8;
+  Methods["Harris_Affine"] = 9;
+  Methods["Harris_ICS"] = 10;
   Methods["all"] = 1;    
             
   std::string method = std::string(argv[3]);
@@ -225,6 +229,57 @@ int main(int argc, char** argv )
       img1Points.clear();
       img2Points.clear(); 
      if (method == "SIPHT") break;    
+    }
+//****************************************************************************//
+    case 8:
+    {
+      check.changeMethod("FAST");
+  
+      int fastThreshold = 15;
+      int octaves = 4;
+      int intervals = 5;
+
+      FAST_Laplace freddy(check.img1, fastThreshold, octaves, intervals);
+      freddy.detector(img1Points);
+      freddy.detector(check.img2, img2Points);
+     
+      check.compare(img1Points, img2Points);
+ 
+      img1Points.clear();
+      img2Points.clear(); 
+     if (method == "FAST") break;    
+    }
+//****************************************************************************//
+    case 9:  
+    {
+      check.changeMethod("Harris_Affine");
+  
+      Harris_Laplace harry(check.img1, 1, 0.04, 5e-6, 5, 10);
+      harry.detector(img1Points);
+      harry.detector(check.img2, img2Points);
+  
+      check.compare(img1Points, img2Points);
+  
+      img1Points.clear();
+      img2Points.clear();
+  
+      if (method == "Harris_Affine") break;
+    }
+//****************************************************************************//
+    case 10:  
+    {
+      check.changeMethod("Harris_ICS");
+  
+      Harris_Laplace harry(check.img1, 2, 0.04, 5e-6, 5, 10);
+      harry.detector(img1Points);
+      harry.detector(check.img2, img2Points);
+  
+      check.compare(img1Points, img2Points);
+  
+      img1Points.clear();
+      img2Points.clear();
+  
+      if (method == "Harris_ICS") break;
     }
 //****************************************************************************//
   }

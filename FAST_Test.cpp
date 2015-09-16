@@ -32,7 +32,7 @@ int main(int argc, char** argv )
     
     std::vector<cv::KeyPoint> img1_points, img2_points;
       
-    FAST_Laplace freddy(img1, 1e-5, 4, 5);
+    FAST_Laplace freddy(img1, 15, 4, 5);
     freddy.detector(img1_points);
     freddy.detector(img1, img2_points);
     

@@ -39,5 +39,5 @@ fast: pk.o FAST_Laplace.o FAST_Test.o
 fastharris: pk.o FAST_Harris.o FAST_Harris_Test.o
 	${CXX} $^ -o $@	${LDADD}
 	
-compare: pk.o Elliptic_KeyPoint.o Affine_Adaptation.o Harris_Laplace.o Hessian_Laplace.o Laplace.o sipht.o Comparator.o Compare.o
+compare: pk.o FAST_Laplace.o Elliptic_KeyPoint.o Affine_Adaptation.o Harris_Laplace.o Hessian_Laplace.o Laplace.o sipht.o Comparator.o Compare.o
 	${CXX} $^ -o $@	${LDADD}
