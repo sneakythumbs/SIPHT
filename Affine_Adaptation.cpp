@@ -724,11 +724,16 @@ namespace pk
     if (gradients.size() < 2)
       return 0;
     
-    writeOutGradients(gradients);
-    float q = executeICSscript(ics);
-   
+//    writeOutGradients(gradients);
+//    float q = executeICSscript(ics);
+    ICS icsCalculator;
+    icsCalculator.calculateNormalizationMat(gradients, ics);
+    normalizeTransformationMatrix(ics, ics);   
+    double detICS = ics.at<double>(0,0)*ics.at<double>(1,1) - ics.at<double>(0,1)*ics.at<double>(1,0);
+    ics /= sqrt(fabs(detICS));
+
     ics.convertTo(ics, CV_32FC1);
-    
+    int q = 1;    
     return q;
   }
 

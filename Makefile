@@ -18,7 +18,7 @@ skewer: pk.o sipht.o skewer.o
 test: test.o sipht.o
 	${CXX} $^ -o $@	${LDADD}
 	
-harris: pk.o Elliptic_KeyPoint.o Affine_Adaptation.o Harris_Laplace.o Harris_Test.o
+harris: pk.o ics.o Elliptic_KeyPoint.o Affine_Adaptation.o Harris_Laplace.o Harris_Test.o
 	${CXX} $^ -o $@	${LDADD}
 	
 laplace: sipht.o Laplace.o Laplace_Test.o
@@ -39,5 +39,5 @@ fast: pk.o FAST_Laplace.o FAST_Test.o
 fastharris: pk.o FAST_Harris.o FAST_Harris_Test.o
 	${CXX} $^ -o $@	${LDADD}
 	
-compare: pk.o FAST_Laplace.o Elliptic_KeyPoint.o Affine_Adaptation.o Harris_Laplace.o Hessian_Laplace.o Laplace.o sipht.o Comparator.o Compare.o
+compare: pk.o ics.o FAST_Laplace.o Elliptic_KeyPoint.o Affine_Adaptation.o Harris_Laplace.o Hessian_Laplace.o Laplace.o sipht.o Comparator.o Compare.o
 	${CXX} $^ -o $@	${LDADD}

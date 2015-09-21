@@ -10,6 +10,7 @@
 #include "opencv2/imgproc/imgproc_c.h"
 
 #include "pk.hpp"
+#include "ics.h"
 
 #include <algorithm>
 #include <string>
